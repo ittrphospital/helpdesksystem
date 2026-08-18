@@ -38,6 +38,20 @@
   font-weight: 700;
 }
 h3 { margin: 0 0 14px; color: var(--navy); }
+#dashboard.hero {
+  padding: calc(var(--nav-height) + 14px) 0 18px;
+}
+#dashboard .hero-grid {
+  grid-template-columns: minmax(0, 900px);
+  gap: 0;
+}
+#dashboard h1 {
+  margin: 6px 0 8px;
+  font-size: clamp(1.9rem, 3.2vw, 3rem);
+}
+#dashboard .hero p {
+  margin: 0;
+}
 #tickets .container {
   width: min(1680px, 96vw);
 }

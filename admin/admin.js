@@ -62,9 +62,6 @@ function renderKpis(items) {
   document.querySelector("[data-kpi-open]").textContent = open;
   document.querySelector("[data-kpi-done]").textContent = done;
   document.querySelector("[data-kpi-cancel]").textContent = cancel;
-  document.querySelector("[data-hero-total]").textContent = total;
-  document.querySelector("[data-hero-wait]").textContent = items.filter((item) => item.status === "รอรับเรื่อง").length;
-  document.querySelector("[data-hero-work]").textContent = items.filter((item) => item.status === "กำลังดำเนินการ").length;
   const dataModeText = document.getElementById("dataModeText");
   if (dataModeText) {
     const hasUserTickets = window.HelpdeskStore.getUserTickets().length > 0;
