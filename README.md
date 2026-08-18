@@ -51,6 +51,7 @@ node server/server.js
 ```env
 PORT=3300
 HOST=127.0.0.1
+DATABASE_URL=postgresql://...
 TELEGRAM_BOT_TOKEN=token_จาก_BotFather
 TELEGRAM_CHAT_ID=chat_id_ของผู้รับหรือกลุ่ม
 ```
@@ -61,6 +62,14 @@ TELEGRAM_CHAT_ID=chat_id_ของผู้รับหรือกลุ่ม
 2. เปิด URL `https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN>/getUpdates`
 3. คัดลอกค่า `chat.id` มาใส่ใน `TELEGRAM_CHAT_ID`
 4. ปิดและเปิด server ใหม่ แล้วทดสอบส่งใบแจ้งซ่อมจากหน้า user
+
+บน Vercel ให้เพิ่ม Environment Variables ชุดเดียวกันใน Project Settings แล้ว Redeploy จากนั้นตรวจสถานะได้ที่:
+
+```text
+https://your-project.vercel.app/api/telegram/status
+```
+
+ถ้าค่าพร้อมใช้งานจะได้ `configured: true`, `hasToken: true`, `hasChatId: true`, และ `hasDatabaseUrl: true`
 
 ## หมายเหตุ
 

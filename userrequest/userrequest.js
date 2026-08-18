@@ -85,6 +85,8 @@ function renderSubmitMessage(ticket, telegram) {
     telegramText = "<br><small>หมายเหตุ: ยังไม่ได้ตั้งค่า TELEGRAM_CHAT_ID ใน .env</small>";
   } else if (telegram && telegram.reason === "api_unavailable") {
     telegramText = "<br><small>หมายเหตุ: เปิดจากไฟล์หรือ backend ยังไม่พร้อม จึงยังไม่ส่ง Telegram</small>";
+  } else if (telegram && telegram.reason) {
+    telegramText = "<br><small>หมายเหตุ: ส่ง Telegram ไม่สำเร็จ กรุณาตรวจค่า token/chat id ใน Vercel</small>";
   }
   return `ส่งเรื่องสำเร็จ เลข Ticket ของคุณคือ <strong>${ticket.ticketNo}</strong> ใช้เลขนี้เพื่อติดตามสถานะ${telegramText}`;
 }
