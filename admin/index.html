@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin Dashboard | HelpdeskSystem</title>
+  <link rel="stylesheet" href="../shared/layout.css">
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="container nav-inner">
+      <a class="brand" href="#dashboard">
+        <span class="brand-mark">TRP</span>
+        <span class="brand-text">HelpdeskSystem<small>Admin Dashboard</small></span>
+      </a>
+      <nav class="nav-links" data-nav-links>
+        <a class="nav-link active" href="#dashboard">ภาพรวม</a>
+        <a class="nav-link" href="#charts">แผนภูมิ</a>
+        <a class="nav-link" href="#tickets">รายการแจ้งซ่อม</a>
+        <a class="nav-link" href="#database">ฐานข้อมูล</a>
+        <button class="nav-button logout" id="logoutButton" type="button">ออกจากระบบ</button>
+      </nav>
+      <button class="hamburger" type="button" aria-label="เปิดเมนู" aria-expanded="false" data-hamburger>
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <section class="hero" id="dashboard">
+    <div class="container hero-grid">
+      <div>
+        <span class="eyebrow">HELPDESKSYSTEM ADMIN</span>
+        <h1>แดชบอร์ดระบบแจ้งซ่อม</h1>
+        <p>ติดตามจำนวนงาน รอดำเนินการ งานเสร็จสิ้น วิเคราะห์ตามประเภทปัญหา และจัดการสถานะใบแจ้งซ่อมจากหน้าจอเดียว</p>
+      </div>
+      <div class="hero-panel" aria-label="สรุปสถานะล่าสุด">
+        <div class="hero-stat"><span>งานทั้งหมด</span><b data-hero-total>0</b></div>
+        <div class="hero-stat"><span>รอรับเรื่อง</span><b data-hero-wait>0</b></div>
+        <div class="hero-stat"><span>กำลังดำเนินการ</span><b data-hero-work>0</b></div>
+      </div>
+    </div>
+  </section>
+
+  <main>
+    <section class="section" id="overview">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <h2>ภาพรวมงานแจ้งซ่อม</h2>
+            <p id="dataModeText">ตัวเลขสรุปจากข้อมูลที่ใช้ทดสอบใน browser นี้</p>
+          </div>
+        </div>
+        <div class="grid kpi">
+          <article class="card kpi-card"><div class="kpi-label">งานทั้งหมด</div><div class="kpi-value" data-kpi-total>0</div></article>
+          <article class="card kpi-card amber"><div class="kpi-label">งานรอดำเนินการ</div><div class="kpi-value" data-kpi-open>0</div></article>
+          <article class="card kpi-card green"><div class="kpi-label">งานเสร็จแล้ว</div><div class="kpi-value" data-kpi-done>0</div></article>
+          <article class="card kpi-card red"><div class="kpi-label">งานยกเลิก</div><div class="kpi-value" data-kpi-cancel>0</div></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section alt" id="charts">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <h2>แผนภูมิและตัวกรอง</h2>
+            <p>กรองข้อมูลตามคำค้นหา แผนก ประเภท และสถานะ</p>
+          </div>
+        </div>
+        <div class="filters card card-pad">
+          <div class="field"><label for="searchText">ค้นหา</label><input id="searchText" placeholder="เลขที่, ผู้แจ้ง, รายละเอียด"></div>
+          <div class="field"><label for="departmentFilter">แผนก</label><select id="departmentFilter"></select></div>
+          <div class="field"><label for="categoryFilter">ประเภท</label><select id="categoryFilter"></select></div>
+          <div class="field"><label for="statusFilter">สถานะ</label><select id="statusFilter"></select></div>
+          <div class="field"><label for="priorityFilter">ความเร่งด่วน</label><select id="priorityFilter"></select></div>
+          <div class="field"><label for="assigneeFilter">ผู้รับผิดชอบ</label><input id="assigneeFilter" placeholder="พิมพ์ชื่อผู้รับผิดชอบ"></div>
+        </div>
+        <div class="grid two">
+          <article class="card card-pad">
+            <h3>จำนวนงานตามประเภทปัญหา</h3>
+            <div class="chart-bars" id="categoryChart"></div>
+          </article>
+          <article class="card card-pad">
+            <h3>สัดส่วนสถานะงาน</h3>
+            <div class="donut" aria-hidden="true"></div>
+            <div class="chart-bars" id="statusChart"></div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="tickets">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <h2>รายการแจ้งซ่อม</h2>
+            <p>Admin สามารถเปลี่ยนสถานะงานที่ผู้ใช้แจ้งจาก browser นี้ได้</p>
+          </div>
+        </div>
+        <div class="card table-wrap">
+          <table id="ticketTable">
+            <thead>
+              <tr>
+                <th>เลขที่</th>
+                <th>ผู้แจ้ง</th>
+                <th>แผนก</th>
+                <th>ประเภท</th>
+                <th>ความเร่งด่วน</th>
+                <th>สถานะ</th>
+                <th>ผู้รับผิดชอบ</th>
+                <th>วันที่แจ้ง</th>
+                <th>วันที่ปิดงาน/ยกเลิก</th>
+                <th>รายละเอียด</th>
+                <th>การแก้ปัญหา</th>
+              </tr>
+            </thead>
+            <tbody id="ticketRows"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="section alt" id="database">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <h2>PostgreSQL/Neon และ Telegram</h2>
+            <p>โครงสร้างฐานข้อมูลและ API contract เตรียมไว้ในโฟลเดอร์ database</p>
+          </div>
+        </div>
+        <div class="grid two">
+          <div class="card card-pad">
+            <h3>ตารางหลัก</h3>
+            <p>admin_users, departments, problem_categories, priority_levels, repair_statuses, repair_tickets, ticket_attachments, telegram_notifications</p>
+          </div>
+          <div class="card card-pad">
+            <h3>Telegram notification</h3>
+            <p>แจ้งเตือนเมื่อมีใบแจ้งซ่อมใหม่ โดยส่ง Ticket No, ผู้แจ้ง, แผนก, ประเภท, ความเร่งด่วน และรายละเอียดสั้น ๆ ไปยัง bot/chat ที่ตั้งค่าไว้</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="dynamic-footer">
+    <div class="container footer-grid">
+      <div><div class="footer-title">HelpdeskSystem Dashboard</div><small>Admin view • Power BI-style dynamic footer</small></div>
+    </div>
+  </footer>
+
+  <button class="scroll-top" type="button" aria-label="กลับขึ้นด้านบน" data-scroll-top>↑</button>
+  <script src="../shared/sample-data.js"></script>
+  <script src="../shared/ui.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>

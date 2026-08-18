@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>แจ้งซ่อม | HelpdeskSystem</title>
+  <link rel="stylesheet" href="../shared/layout.css">
+  <link rel="stylesheet" href="userrequest.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="container nav-inner">
+      <a class="brand" href="#request">
+        <span class="brand-mark">TRP</span>
+        <span class="brand-text">HelpdeskSystem<small>User Request</small></span>
+      </a>
+      <nav class="nav-links" data-nav-links>
+        <a class="nav-link active" href="#request">แจ้งซ่อม</a>
+        <a class="nav-link" href="#status">ติดตามงาน</a>
+      </nav>
+      <button class="hamburger" type="button" aria-label="เปิดเมนู" aria-expanded="false" data-hamburger>
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <section class="hero request-hero" id="request">
+    <div class="container hero-grid single">
+      <div>
+        <span class="eyebrow">USER REQUEST</span>
+        <h1>แจ้งซ่อมระบบ IT</h1>
+        <p>กรอกข้อมูลปัญหาให้ครบถ้วนเพื่อให้ทีม IT ตรวจสอบและรับเรื่องได้รวดเร็ว หลังส่งเรื่องจะได้รับเลข Ticket สำหรับติดตามสถานะ</p>
+      </div>
+    </div>
+  </section>
+
+  <main>
+    <section class="section">
+      <div class="container">
+        <div class="request-layout">
+          <form class="card card-pad request-form" id="requestForm">
+            <div class="section-head compact">
+              <div>
+                <h2>ข้อมูลแจ้งซ่อม</h2>
+                <p>บังคับกรอกเฉพาะชื่อผู้แจ้ง แผนก และประเภทปัญหา</p>
+              </div>
+            </div>
+            <div class="form-grid">
+              <div class="field">
+                <label class="required-label" for="requesterName">ชื่อผู้แจ้ง</label>
+                <input id="requesterName" name="requesterName" required maxlength="120" autocomplete="name" placeholder="ชื่อ-นามสกุล">
+              </div>
+              <div class="field">
+                <label class="required-label" for="department">แผนก</label>
+                <select id="department" name="department" required></select>
+              </div>
+              <div class="field">
+                <label class="required-label" for="category">ประเภทปัญหา</label>
+                <select id="category" name="category" required></select>
+              </div>
+              <div class="field">
+                <label for="priority">ระดับความเร่งด่วน</label>
+                <select id="priority" name="priority"></select>
+              </div>
+              <div class="field full">
+                <label for="title">หัวข้อปัญหา</label>
+                <input id="title" name="title" maxlength="180" placeholder="เช่น คอมพิวเตอร์เปิดไม่ติด">
+              </div>
+              <div class="field full">
+                <label for="description">รายละเอียด</label>
+                <textarea id="description" name="description" maxlength="1200" placeholder="อธิบายอาการ จุดที่พบปัญหา และเวลาที่เริ่มเกิดปัญหา"></textarea>
+              </div>
+              <div class="field full">
+                <label for="attachment">แนบรูป</label>
+                <input id="attachment" name="attachment" type="file" accept="image/*">
+              </div>
+            </div>
+            <div class="notice" id="resultBox" hidden></div>
+            <div class="form-actions">
+              <button class="button secondary" type="reset">ล้างข้อมูล</button>
+              <button class="button" type="submit">ส่งเรื่องแจ้งซ่อม</button>
+            </div>
+          </form>
+          <aside class="card card-pad request-side">
+            <h3>ขั้นตอนหลังส่งเรื่อง</h3>
+            <ol class="step-list">
+              <li><b>รับ Ticket No.</b><span>ใช้เลขนี้เพื่อติดตามสถานะ</span></li>
+              <li><b>แจ้งเตือน IT</b><span>ระบบส่งข้อความเข้า Telegram เมื่อกำหนด chat id แล้ว</span></li>
+              <li><b>Admin รับเรื่อง</b><span>ตรวจสอบและเปลี่ยนสถานะใน Dashboard</span></li>
+            </ol>
+          </aside>
+        </div>
+      </div>
+    </section>
+
+    <section class="section alt" id="status">
+      <div class="container">
+        <div class="section-head">
+          <div>
+            <h2>ติดตามสถานะใบงาน</h2>
+            <p>ค้นหาด้วยเลข Ticket ที่ได้รับหลังส่งเรื่อง</p>
+          </div>
+          <a class="button secondary" href="track.html">เปิดหน้าติดตามแบบเต็ม</a>
+        </div>
+        <div class="card card-pad track-mini">
+          <div class="field">
+            <label for="quickTrack">เลข Ticket</label>
+            <input id="quickTrack" placeholder="เช่น IT-690001">
+          </div>
+          <button class="button" id="quickTrackButton" type="button">ค้นหา</button>
+          <div id="quickTrackResult"></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="dynamic-footer">
+    <div class="container footer-grid">
+      <div><div class="footer-title">HelpdeskSystem User Request</div><small>แจ้งซ่อมและติดตามสถานะ</small></div>
+    </div>
+  </footer>
+
+  <button class="scroll-top" type="button" aria-label="กลับขึ้นด้านบน" data-scroll-top>↑</button>
+  <script src="../shared/sample-data.js"></script>
+  <script src="../shared/ui.js"></script>
+  <script src="userrequest.js"></script>
+</body>
+</html>

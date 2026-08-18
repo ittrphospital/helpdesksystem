@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ติดตามสถานะ | HelpdeskSystem</title>
+  <link rel="stylesheet" href="../shared/layout.css">
+  <link rel="stylesheet" href="userrequest.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="container nav-inner">
+      <a class="brand" href="index.html">
+        <span class="brand-mark">TRP</span>
+        <span class="brand-text">HelpdeskSystem<small>Ticket Tracking</small></span>
+      </a>
+      <nav class="nav-links" data-nav-links>
+        <a class="nav-link" href="index.html#request">แจ้งซ่อม</a>
+        <a class="nav-link active" href="#tracking">ติดตามงาน</a>
+      </nav>
+      <button class="hamburger" type="button" aria-label="เปิดเมนู" aria-expanded="false" data-hamburger>
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <main class="track-page" id="tracking">
+    <div class="container">
+      <section class="card card-pad track-card">
+        <span class="eyebrow">TICKET TRACKING</span>
+        <h1>ติดตามสถานะงานแจ้งซ่อม</h1>
+        <p>กรอกเลข Ticket เพื่อตรวจสอบสถานะล่าสุด</p>
+        <div class="track-search">
+          <input id="ticketNo" placeholder="IT-690001">
+          <button class="button" id="trackButton" type="button">ค้นหา</button>
+        </div>
+        <div id="trackResult" class="track-result"></div>
+      </section>
+    </div>
+  </main>
+
+  <footer class="dynamic-footer">
+    <div class="container footer-grid">
+      <div><div class="footer-title">HelpdeskSystem Tracking</div><small>ตรวจสอบสถานะใบงาน</small></div>
+    </div>
+  </footer>
+
+  <button class="scroll-top" type="button" aria-label="กลับขึ้นด้านบน" data-scroll-top>↑</button>
+  <script src="../shared/sample-data.js"></script>
+  <script src="../shared/ui.js"></script>
+  <script src="track.js"></script>
+</body>
+</html>

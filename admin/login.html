@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>เข้าสู่ระบบ Admin | HelpdeskSystem</title>
+  <link rel="stylesheet" href="../shared/layout.css">
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body class="login-page">
+  <main class="login-shell">
+    <section class="login-brand">
+      <div class="brand-mark">TRP</div>
+      <p class="eyebrow">HelpdeskSystem</p>
+      <h1>Admin Dashboard</h1>
+      <p>เข้าสู่ระบบเพื่อดูภาพรวมงานแจ้งซ่อม ค้นหาใบงาน และปรับสถานะการดำเนินการ</p>
+      <div class="login-note">บัญชีตัวอย่าง: admin / admin123</div>
+    </section>
+    <section class="login-card card">
+      <h2>เข้าสู่ระบบ</h2>
+      <p>ระบบสิทธิ์พื้นฐานสำหรับผู้ดูแลระบบ</p>
+      <form id="loginForm">
+        <div class="field">
+          <label for="username">ชื่อผู้ใช้งาน</label>
+          <input id="username" name="username" autocomplete="username" required>
+        </div>
+        <div class="field">
+          <label for="password">รหัสผ่าน</label>
+          <input id="password" name="password" type="password" autocomplete="current-password" required>
+        </div>
+        <div class="form-error" id="loginError" hidden>ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง</div>
+        <button class="button" type="submit">เข้าสู่ระบบ</button>
+      </form>
+    </section>
+  </main>
+  <script src="login.js"></script>
+</body>
+</html>
