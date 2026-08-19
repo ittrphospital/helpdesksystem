@@ -32,7 +32,7 @@ window.HelpdeskData = {
   tickets: [
     {
       id: 1,
-      ticketNo: "IT-690001",
+      ticketNo: "REQ-690001",
       requesterName: "วชิรวิทย์ คงดี",
       department: "บัญชี",
       category: "อุปกรณ์คอมพิวเตอร์และอุปกรณ์ต่อพ่วง",
@@ -50,7 +50,7 @@ window.HelpdeskData = {
     },
     {
       id: 2,
-      ticketNo: "IT-690002",
+      ticketNo: "REQ-690002",
       requesterName: "สุภาวดี แสงทอง",
       department: "แอดมิน",
       category: "บัญชีผู้ใช้งานและสิทธิ์การเข้าถึง",
@@ -87,10 +87,10 @@ window.HelpdeskStore = {
     return String(year).slice(-2);
   },
   isNewTicketNo(ticketNo) {
-    return /^IT-\d{6}$/.test(ticketNo || "");
+    return /^REQ-\d{6}$/.test(ticketNo || "");
   },
   makeTicketNoForSequence(dateValue, sequence) {
-    return `IT-${this.getBuddhistYearCode(dateValue)}${String(sequence).padStart(4, "0")}`;
+    return `REQ-${this.getBuddhistYearCode(dateValue)}${String(sequence).padStart(4, "0")}`;
   },
   migrateTicketNumbers(tickets) {
     const countersByYear = {};
@@ -99,8 +99,8 @@ window.HelpdeskStore = {
       .sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0))
       .map((ticket) => {
         if (this.isNewTicketNo(ticket.ticketNo)) {
-          const yearCode = ticket.ticketNo.slice(3, 5);
-          const seq = Number(ticket.ticketNo.slice(5));
+          const yearCode = ticket.ticketNo.slice(4, 6);
+          const seq = Number(ticket.ticketNo.slice(6));
           countersByYear[yearCode] = Math.max(countersByYear[yearCode] || 0, Number.isFinite(seq) ? seq : 0);
           return ticket;
         }
@@ -206,9 +206,9 @@ window.HelpdeskStore = {
   makeTicketNo() {
     const now = new Date();
     const yearCode = this.getBuddhistYearCode(now);
-    const ticketsForYear = this.getUserTickets().filter((ticket) => ticket.ticketNo.startsWith(`IT-${yearCode}`));
+    const ticketsForYear = this.getUserTickets().filter((ticket) => ticket.ticketNo.startsWith(`REQ-${yearCode}`));
     const maxSeq = ticketsForYear.reduce((max, ticket) => {
-      const seq = Number(ticket.ticketNo.slice(5));
+      const seq = Number(ticket.ticketNo.slice(6));
       return Number.isFinite(seq) ? Math.max(max, seq) : max;
     }, 0);
     return this.makeTicketNoForSequence(now, maxSeq + 1);

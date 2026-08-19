@@ -86,11 +86,11 @@ function getBuddhistYearCode(date) {
 function makeTicketNo(tickets, date) {
   const yearCode = getBuddhistYearCode(date);
   const maxSeq = tickets.reduce((max, ticket) => {
-    if (!String(ticket.ticketNo || "").startsWith(`IT-${yearCode}`)) return max;
-    const seq = Number(String(ticket.ticketNo).slice(5));
+    if (!String(ticket.ticketNo || "").startsWith(`REQ-${yearCode}`)) return max;
+    const seq = Number(String(ticket.ticketNo).slice(6));
     return Number.isFinite(seq) ? Math.max(max, seq) : max;
   }, 0);
-  return `IT-${yearCode}${String(maxSeq + 1).padStart(4, "0")}`;
+  return `REQ-${yearCode}${String(maxSeq + 1).padStart(4, "0")}`;
 }
 
 async function readTickets() {

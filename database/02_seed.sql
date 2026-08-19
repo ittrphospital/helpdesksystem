@@ -64,7 +64,7 @@ insert into repair_tickets (
   created_at
 )
 select
-  'IT-690001',
+  'REQ-690001',
   'วชิรวิทย์ คงดี',
   d.department_id,
   c.category_id,
@@ -96,7 +96,7 @@ insert into repair_tickets (
   created_at
 )
 select
-  'IT-690002',
+  'REQ-690002',
   'สุภาวดี แสงทอง',
   d.department_id,
   c.category_id,
@@ -117,5 +117,5 @@ on conflict (ticket_no) do nothing;
 insert into ticket_attachments (ticket_id, original_file_name, mime_type)
 select ticket_id, 'printer-error.jpg', 'image/jpeg'
 from repair_tickets
-where ticket_no = 'IT-690001'
+where ticket_no = 'REQ-690001'
 on conflict do nothing;

@@ -58,7 +58,7 @@ Response:
 
 ```json
 {
-  "ticketNo": "IT-690001",
+  "ticketNo": "REQ-690001",
   "status": "รอรับเรื่อง"
 }
 ```
@@ -67,7 +67,7 @@ Response:
 
 ```text
 มีใบแจ้งซ่อมใหม่
-Ticket: IT-690001
+Ticket: REQ-690001
 ผู้แจ้ง: วชิรวิทย์ คงดี
 แผนก: บัญชี
 ประเภท: อุปกรณ์คอมพิวเตอร์และอุปกรณ์ต่อพ่วง
@@ -83,7 +83,7 @@ Response:
 
 ```json
 {
-  "ticketNo": "IT-690001",
+  "ticketNo": "REQ-690001",
   "requesterName": "วชิรวิทย์ คงดี",
   "department": "บัญชี",
   "category": "อุปกรณ์คอมพิวเตอร์และอุปกรณ์ต่อพ่วง",
@@ -143,7 +143,7 @@ Response:
 
 ```json
 {
-  "ticketNo": "IT-690001",
+  "ticketNo": "REQ-690001",
   "status": "กำลังดำเนินการ",
   "completedAt": null,
   "cancelledAt": null

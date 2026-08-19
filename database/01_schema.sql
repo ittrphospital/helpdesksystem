@@ -133,12 +133,12 @@ begin
   end if;
 
   buddhist_year_code := right(((extract(year from now() at time zone 'Asia/Bangkok')::integer + 543)::text), 2);
-  select coalesce(max(substring(ticket_no from 6 for 4)::integer), 0) + 1
+  select coalesce(max(substring(ticket_no from 7 for 4)::integer), 0) + 1
     into next_no
     from repair_tickets
-    where ticket_no ~ ('^IT-' || buddhist_year_code || '[0-9]{4}$');
+    where ticket_no ~ ('^REQ-' || buddhist_year_code || '[0-9]{4}$');
 
-  new.ticket_no := 'IT-' || buddhist_year_code || lpad(next_no::text, 4, '0');
+  new.ticket_no := 'REQ-' || buddhist_year_code || lpad(next_no::text, 4, '0');
   return new;
 end;
 $$ language plpgsql;
