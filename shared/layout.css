@@ -74,6 +74,17 @@ button, input, select, textarea { font: inherit; }
   object-fit: contain;
   display: block;
 }
+.brand-mark.text-mark {
+  width: 68px;
+  height: 48px;
+  background: rgba(255, 255, 255, .9);
+  border: 1px solid rgba(214, 190, 255, .5);
+  color: #5f2c8f;
+  font-size: 1rem;
+  letter-spacing: .18em;
+  text-indent: .18em;
+  box-shadow: 0 8px 18px rgba(30, 17, 58, .18);
+}
 .brand-text { display: flex; flex-direction: column; color: #fff; font-weight: 800; line-height: 1.2; }
 .brand-text small { color: rgba(243, 232, 255, .82); font-weight: 500; }
 .nav-links { display: flex; align-items: center; gap: 6px; }
