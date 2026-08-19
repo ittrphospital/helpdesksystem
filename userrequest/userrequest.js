@@ -32,7 +32,7 @@ function createTicketPayload(formData) {
     department: formData.get("department"),
     category: formData.get("category"),
     priority: formData.get("priority") || "-",
-    title: formData.get("title").trim() || "-",
+    title: formData.get("category") || "-",
     description: formData.get("description").trim() || "-"
   };
 }
