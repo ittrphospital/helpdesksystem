@@ -37,9 +37,7 @@ button, input, select, textarea { font: inherit; }
   height: var(--nav-height);
   z-index: 50;
   background:
-    linear-gradient(135deg, rgba(49, 24, 84, .9), rgba(92, 47, 136, .82), rgba(30, 17, 58, .9)),
-    linear-gradient(rgba(255, 255, 255, .16), rgba(255, 255, 255, .16)),
-    url("assets/BG.png") center / cover no-repeat;
+    linear-gradient(135deg, rgba(49, 24, 84, .96), rgba(92, 47, 136, .9), rgba(30, 17, 58, .96));
   border-bottom: 1px solid rgba(214, 190, 255, .34);
   backdrop-filter: blur(12px);
 }
