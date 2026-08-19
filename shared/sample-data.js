@@ -171,6 +171,22 @@ window.HelpdeskStore = {
       this.saveTickets(saved);
     }
   },
+  updateCategory(ticketNo, category) {
+    const saved = this.getSavedTickets();
+    let ticket = saved.find((item) => item.ticketNo === ticketNo);
+    if (!ticket) {
+      const baseTicket = window.HelpdeskData.tickets.find((item) => item.ticketNo === ticketNo);
+      if (baseTicket) {
+        ticket = { ...baseTicket };
+        saved.push(ticket);
+      }
+    }
+    if (ticket) {
+      ticket.category = category;
+      ticket.updatedAt = new Date().toISOString();
+      this.saveTickets(saved);
+    }
+  },
   updateAssignee(ticketNo, assignee) {
     const saved = this.getSavedTickets();
     let ticket = saved.find((item) => item.ticketNo === ticketNo);

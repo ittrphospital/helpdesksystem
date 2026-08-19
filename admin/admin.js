@@ -52,6 +52,13 @@ function renderBars(container, counts) {
   }).join("");
 }
 
+function buildOptions(values, currentValue) {
+  return values.map((value) => {
+    const selected = currentValue === value ? "selected" : "";
+    return `<option value="${escapeHtml(value)}" ${selected}>${escapeHtml(value)}</option>`;
+  }).join("");
+}
+
 function renderKpis(items) {
   const total = items.length;
   const open = items.filter((item) => item.status === "รอรับเรื่อง" || item.status === "กำลังดำเนินการ").length;
@@ -135,10 +142,8 @@ function setupResizableColumns() {
 function renderTable(items) {
   document.getElementById("ticketRows").innerHTML = items.map((ticket) => {
     const currentStatusClass = statusClass(ticket.status);
-    const statusOptions = window.HelpdeskData.statuses.map((status) => {
-      const selected = ticket.status === status ? "selected" : "";
-      return `<option value="${status}" ${selected}>${status}</option>`;
-    }).join("");
+    const statusOptions = buildOptions(window.HelpdeskData.statuses, ticket.status);
+    const categoryOptions = buildOptions(window.HelpdeskData.categories, ticket.category);
     const assignee = ticket.assignee || "";
     const solution = ticket.solution || "";
     const closedDateTime = getClosedDateTime(ticket);
@@ -147,7 +152,7 @@ function renderTable(items) {
         <td><strong>${ticket.ticketNo}</strong></td>
         <td>${ticket.requesterName}</td>
         <td>${ticket.department}</td>
-        <td>${ticket.category}</td>
+        <td><select class="category-select" data-ticket-no="${ticket.ticketNo}">${categoryOptions}</select></td>
         <td>${ticket.priority}</td>
         <td>
           <select class="status-select status-${currentStatusClass}" data-ticket-no="${ticket.ticketNo}">${statusOptions}</select>
@@ -168,6 +173,13 @@ function renderTable(items) {
     });
   });
 
+  document.querySelectorAll(".category-select").forEach((select) => {
+    select.addEventListener("change", () => {
+      window.HelpdeskStore.updateCategory(select.dataset.ticketNo, select.value);
+      load();
+    });
+  });
+
   document.querySelectorAll(".assignee-input").forEach((input) => {
     input.addEventListener("change", () => {
       window.HelpdeskStore.updateAssignee(input.dataset.ticketNo, input.value);
@@ -181,6 +193,63 @@ function renderTable(items) {
       load();
     });
   });
+}
+
+function excelCell(value) {
+  return `<td>${escapeHtml(value || "-")}</td>`;
+}
+
+function exportTicketsToExcel() {
+  const rows = state.filtered.map((ticket) => {
+    const closedDateTime = getClosedDateTime(ticket);
+    return `<tr>
+      ${excelCell(ticket.ticketNo)}
+      ${excelCell(ticket.requesterName)}
+      ${excelCell(ticket.department)}
+      ${excelCell(ticket.category)}
+      ${excelCell(ticket.priority)}
+      ${excelCell(ticket.status)}
+      ${excelCell(ticket.assignee)}
+      ${excelCell(formatDateTime(ticket.createdAt))}
+      ${excelCell(closedDateTime ? formatDateTime(closedDateTime) : "-")}
+      ${excelCell(ticket.description)}
+      ${excelCell(ticket.solution)}
+    </tr>`;
+  }).join("");
+  const html = `<!doctype html>
+<html>
+<head><meta charset="utf-8"></head>
+<body>
+<table>
+  <thead>
+    <tr>
+      <th>เลขที่</th>
+      <th>ผู้แจ้ง</th>
+      <th>แผนก</th>
+      <th>ประเภท</th>
+      <th>ความเร่งด่วน</th>
+      <th>สถานะ</th>
+      <th>ผู้รับผิดชอบ</th>
+      <th>วันที่แจ้ง</th>
+      <th>วันที่ปิดงาน/ยกเลิก</th>
+      <th>รายละเอียด</th>
+      <th>การแก้ปัญหา</th>
+    </tr>
+  </thead>
+  <tbody>${rows}</tbody>
+</table>
+</body>
+</html>`;
+  const blob = new Blob([html], { type: "application/vnd.ms-excel;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  const dateCode = new Date().toISOString().slice(0, 10).replaceAll("-", "");
+  link.href = url;
+  link.download = `helpdesksystem-report-${dateCode}.xls`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 }
 
 function applyFilters() {
@@ -219,6 +288,8 @@ document.getElementById("logoutButton").addEventListener("click", () => {
   sessionStorage.removeItem("helpdesksystem.admin");
   window.location.href = "login.html";
 });
+
+document.getElementById("exportExcelButton").addEventListener("click", exportTicketsToExcel);
 
 load();
 setupResizableColumns();
