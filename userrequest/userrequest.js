@@ -26,15 +26,14 @@ function canUseApi() {
   return window.location.protocol === "http:" || window.location.protocol === "https:";
 }
 
-function createTicketPayload(formData, attachment) {
+function createTicketPayload(formData) {
   return {
     requesterName: formData.get("requesterName").trim(),
     department: formData.get("department"),
     category: formData.get("category"),
     priority: formData.get("priority") || "-",
     title: formData.get("title").trim() || "-",
-    description: formData.get("description").trim() || "-",
-    attachmentName: attachment && attachment.name ? attachment.name : ""
+    description: formData.get("description").trim() || "-"
   };
 }
 
@@ -115,8 +114,7 @@ document.getElementById("requestForm").addEventListener("submit", async (event) 
   submitButton.textContent = "กำลังส่งเรื่อง...";
 
   const formData = new FormData(form);
-  const attachment = formData.get("attachment");
-  const payload = createTicketPayload(formData, attachment);
+  const payload = createTicketPayload(formData);
   const { ticket, telegram } = await createTicket(payload);
 
   window.HelpdeskStore.addTicket(ticket);
