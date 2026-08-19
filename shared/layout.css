@@ -15,7 +15,7 @@
   --muted: #657487;
   --line: #dfe6ef;
   --shadow: 0 10px 30px rgba(18, 48, 79, .08);
-  --nav-height: 68px;
+  --nav-height: 90px;
 }
 
 * { box-sizing: border-box; }
@@ -37,9 +37,10 @@ button, input, select, textarea { font: inherit; }
   height: var(--nav-height);
   z-index: 50;
   background:
-    linear-gradient(rgba(255, 255, 255, .9), rgba(255, 255, 255, .9)),
+    linear-gradient(135deg, rgba(49, 24, 84, .9), rgba(92, 47, 136, .82), rgba(30, 17, 58, .9)),
+    linear-gradient(rgba(255, 255, 255, .16), rgba(255, 255, 255, .16)),
     url("assets/BG.png") center / cover no-repeat;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid rgba(214, 190, 255, .34);
   backdrop-filter: blur(12px);
 }
 .nav-inner {
@@ -75,19 +76,19 @@ button, input, select, textarea { font: inherit; }
   object-fit: contain;
   display: block;
 }
-.brand-text { display: flex; flex-direction: column; color: var(--navy); font-weight: 800; line-height: 1.2; }
-.brand-text small { color: var(--muted); font-weight: 500; }
+.brand-text { display: flex; flex-direction: column; color: #fff; font-weight: 800; line-height: 1.2; }
+.brand-text small { color: rgba(243, 232, 255, .82); font-weight: 500; }
 .nav-links { display: flex; align-items: center; gap: 6px; }
 .nav-link, .nav-button {
   border: 0;
   border-radius: 8px;
   padding: 10px 14px;
   background: transparent;
-  color: var(--muted);
+  color: rgba(255, 255, 255, .78);
   font-weight: 700;
   cursor: pointer;
 }
-.nav-link:hover, .nav-link.active, .nav-button:hover { color: var(--navy); background: var(--surface-2); }
+.nav-link:hover, .nav-link.active, .nav-button:hover { color: #fff; background: rgba(255, 255, 255, .16); }
 .nav-button.logout { color: var(--red); }
 .hamburger {
   display: none;
@@ -103,7 +104,7 @@ button, input, select, textarea { font: inherit; }
   height: 2px;
   margin: 6px 0;
   border-radius: 2px;
-  background: var(--navy);
+  background: #fff;
   transition: transform .2s, opacity .2s;
 }
 .hamburger.open span:nth-child(1) { transform: translateY(8px) rotate(45deg); }

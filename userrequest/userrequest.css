@@ -14,18 +14,18 @@
   max-width: 860px;
 }
 .request-brand-text small {
-  color: var(--teal);
+  color: #f0dbff;
   font-size: .68rem;
   font-weight: 800;
   letter-spacing: .04em;
 }
 .request-brand-text strong {
-  color: var(--navy);
+  color: #ffffff;
   font-size: 1.28rem;
   line-height: 1.15;
 }
 .request-brand-text em {
-  color: var(--muted);
+  color: rgba(255, 255, 255, .78);
   font-size: .82rem;
   font-style: normal;
   font-weight: 600;
