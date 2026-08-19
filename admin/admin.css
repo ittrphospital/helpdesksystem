@@ -42,8 +42,11 @@ h3 { margin: 0 0 14px; color: var(--navy); }
 .admin-main {
   padding-top: var(--nav-height);
 }
-.admin-main > .section:first-child {
-  padding-top: 34px;
+#overview.section {
+  padding: 20px 0;
+}
+#charts.section {
+  padding: 38px 0;
 }
 #tickets .container {
   width: min(1680px, 96vw);
