@@ -15,12 +15,13 @@
 }
 .request-brand-text small {
   color: var(--teal);
+  font-size: .68rem;
   font-weight: 800;
   letter-spacing: .04em;
 }
 .request-brand-text strong {
   color: var(--navy);
-  font-size: 1.05rem;
+  font-size: 1.28rem;
   line-height: 1.15;
 }
 .request-brand-text em {
