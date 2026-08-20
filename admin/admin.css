@@ -16,16 +16,6 @@
 }
 .login-brand { color: #fff; }
 .login-brand p { color: #d9e7f2; }
-.login-note {
-  display: inline-flex;
-  margin-top: 18px;
-  padding: 10px 14px;
-  border-radius: 8px;
-  background: rgba(255,255,255,.12);
-  border: 1px solid rgba(255,255,255,.2);
-  color: #fff;
-  font-weight: 700;
-}
 .login-card { padding: 28px; background: #fff; }
 .login-card h2 { margin: 0 0 4px; color: var(--navy); }
 .login-card p { margin-top: 0; color: var(--muted); }
