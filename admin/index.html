@@ -82,8 +82,13 @@
             <h2>รายการแจ้งซ่อม</h2>
             <p>Admin สามารถเปลี่ยนสถานะงานที่ผู้ใช้แจ้งจาก browser นี้ได้</p>
           </div>
-          <button class="button export-button" id="exportExcelButton" type="button">Export Excel</button>
+          <div class="table-actions">
+            <input id="importExcelInput" type="file" accept=".xls,.html,.htm" hidden>
+            <button class="button secondary import-button" id="importExcelButton" type="button">Import Excel</button>
+            <button class="button export-button" id="exportExcelButton" type="button">Export Excel</button>
+          </div>
         </div>
+        <div class="notice admin-import-notice" id="importResultBox" hidden></div>
         <div class="card table-wrap">
           <table id="ticketTable">
             <thead>

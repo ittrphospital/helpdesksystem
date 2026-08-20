@@ -144,6 +144,26 @@ window.HelpdeskStore = {
     }
     this.saveTickets(saved);
   },
+  importTickets(tickets) {
+    const saved = this.getSavedTickets();
+    let inserted = 0;
+    let updated = 0;
+
+    tickets.forEach((ticket) => {
+      const nextTicket = { ...ticket, source: ticket.source || "import" };
+      const existingIndex = saved.findIndex((item) => item.ticketNo === nextTicket.ticketNo);
+      if (existingIndex >= 0) {
+        saved[existingIndex] = { ...saved[existingIndex], ...nextTicket };
+        updated += 1;
+      } else {
+        saved.push(nextTicket);
+        inserted += 1;
+      }
+    });
+
+    this.saveTickets(saved);
+    return { total: tickets.length, inserted, updated };
+  },
   updateStatus(ticketNo, status) {
     const saved = this.getSavedTickets();
     let ticket = saved.find((item) => item.ticketNo === ticketNo);

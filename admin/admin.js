@@ -16,6 +16,8 @@ const fields = {
   priority: document.getElementById("priorityFilter"),
   assignee: document.getElementById("assigneeFilter")
 };
+const importExcelInput = document.getElementById("importExcelInput");
+const importResultBox = document.getElementById("importResultBox");
 const tableWidthKey = "helpdesksystem.admin.columnWidths.v2";
 const defaultColumnWidths = [130, 120, 120, 170, 130, 154, 180, 170, 190, 180, 200];
 
@@ -54,10 +56,130 @@ function renderBars(container, counts) {
 }
 
 function buildOptions(values, currentValue) {
-  return values.map((value) => {
+  const options = values.includes(currentValue) || !currentValue
+    ? values
+    : [currentValue, ...values];
+  return options.map((value) => {
     const selected = currentValue === value ? "selected" : "";
     return `<option value="${escapeHtml(value)}" ${selected}>${escapeHtml(value)}</option>`;
   }).join("");
+}
+
+function normalizeCell(value) {
+  const text = String(value ?? "").replace(/\s+/g, " ").trim();
+  return text === "-" ? "" : text;
+}
+
+function showImportMessage(message, type = "success") {
+  importResultBox.hidden = false;
+  importResultBox.classList.toggle("error", type === "error");
+  importResultBox.textContent = message;
+}
+
+function parseThaiDateTime(value) {
+  const text = normalizeCell(value);
+  if (!text) return "";
+  const direct = new Date(text);
+  if (!Number.isNaN(direct.getTime())) return direct.toISOString();
+
+  const numericMatch = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})/);
+  if (numericMatch) {
+    const day = numericMatch[1].padStart(2, "0");
+    const month = numericMatch[2].padStart(2, "0");
+    const rawYear = Number(numericMatch[3]);
+    const year = String(rawYear > 2400 ? rawYear - 543 : rawYear);
+    const hour = numericMatch[4].padStart(2, "0");
+    const minute = numericMatch[5].padStart(2, "0");
+    return `${year}-${month}-${day}T${hour}:${minute}:00+07:00`;
+  }
+
+  const months = {
+    "ม.ค.": 1, "มกราคม": 1,
+    "ก.พ.": 2, "กุมภาพันธ์": 2,
+    "มี.ค.": 3, "มีนาคม": 3,
+    "เม.ย.": 4, "เมษายน": 4,
+    "พ.ค.": 5, "พฤษภาคม": 5,
+    "มิ.ย.": 6, "มิถุนายน": 6,
+    "ก.ค.": 7, "กรกฎาคม": 7,
+    "ส.ค.": 8, "สิงหาคม": 8,
+    "ก.ย.": 9, "กันยายน": 9,
+    "ต.ค.": 10, "ตุลาคม": 10,
+    "พ.ย.": 11, "พฤศจิกายน": 11,
+    "ธ.ค.": 12, "ธันวาคม": 12
+  };
+  const match = text.match(/^(\d{1,2})\s+(\S+)\s+(\d{4})\s+(\d{1,2}):(\d{2})/);
+  if (!match || !months[match[2]]) return "";
+  const day = match[1].padStart(2, "0");
+  const month = String(months[match[2]]).padStart(2, "0");
+  const year = String(Number(match[3]) - 543);
+  const hour = match[4].padStart(2, "0");
+  const minute = match[5].padStart(2, "0");
+  return `${year}-${month}-${day}T${hour}:${minute}:00+07:00`;
+}
+
+function getCell(row, indexMap, header) {
+  const index = indexMap.get(header);
+  if (index === undefined) return "";
+  return normalizeCell(row[index]);
+}
+
+function parseImportedTickets(html) {
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const tables = Array.from(doc.querySelectorAll("table"));
+  const table = tables.find((candidate) => {
+    const firstRow = candidate.querySelector("tr");
+    if (!firstRow) return false;
+    const headers = Array.from(firstRow.children).map((cell) => normalizeCell(cell.textContent));
+    return ["เลขที่", "ผู้แจ้ง", "แผนก", "ประเภท", "สถานะ"].every((header) => headers.includes(header));
+  });
+  if (!table) {
+    if (html.includes("_files/sheet001.htm") || html.includes("frSheet")) {
+      throw new Error("ไฟล์นี้เป็นไฟล์หลักของ Excel กรุณาเลือกไฟล์ sheet001.htm ในโฟลเดอร์ *_files หรือใช้ไฟล์ .xls ที่ export จากระบบโดยตรง");
+    }
+    throw new Error("ไม่พบตารางรายการแจ้งซ่อมในไฟล์ Excel");
+  }
+  const rows = Array.from(table.querySelectorAll("tr")).map((row) =>
+    Array.from(row.children).map((cell) => normalizeCell(cell.textContent))
+  ).filter((row) => row.some(Boolean));
+  if (rows.length < 2) {
+    throw new Error("ไม่พบรายการแจ้งซ่อมในไฟล์ Excel");
+  }
+
+  const headerRow = rows[0];
+  const indexMap = new Map(headerRow.map((header, index) => [header, index]));
+  const requiredHeaders = ["เลขที่", "ผู้แจ้ง", "แผนก", "ประเภท", "สถานะ"];
+  const missingHeaders = requiredHeaders.filter((header) => !indexMap.has(header));
+  if (missingHeaders.length) {
+    throw new Error(`ไฟล์ Excel ขาดคอลัมน์: ${missingHeaders.join(", ")}`);
+  }
+
+  return rows.slice(1).map((row, index) => {
+    const ticketNo = getCell(row, indexMap, "เลขที่");
+    if (!ticketNo) return null;
+
+    const status = getCell(row, indexMap, "สถานะ") || "รอรับเรื่อง";
+    const closedAt = parseThaiDateTime(getCell(row, indexMap, "วันที่ปิดงาน/ยกเลิก"));
+    const createdAt = parseThaiDateTime(getCell(row, indexMap, "วันที่แจ้ง")) || new Date().toISOString();
+    return {
+      id: Date.now() + index,
+      ticketNo,
+      requesterName: getCell(row, indexMap, "ผู้แจ้ง") || "-",
+      department: getCell(row, indexMap, "แผนก") || "-",
+      category: getCell(row, indexMap, "ประเภท") || "-",
+      priority: getCell(row, indexMap, "ความเร่งด่วน") || "-",
+      status,
+      assignee: getCell(row, indexMap, "ผู้รับผิดชอบ"),
+      title: getCell(row, indexMap, "ประเภท") || "-",
+      description: getCell(row, indexMap, "รายละเอียด") || "-",
+      solution: getCell(row, indexMap, "การแก้ปัญหา"),
+      attachmentName: "",
+      source: "import",
+      createdAt,
+      updatedAt: closedAt || createdAt,
+      completedAt: status === "เสร็จสิ้น" ? closedAt : "",
+      cancelledAt: status === "ยกเลิก" ? closedAt : ""
+    };
+  }).filter(Boolean);
 }
 
 function renderKpis(items) {
@@ -253,6 +375,31 @@ function exportTicketsToExcel() {
   URL.revokeObjectURL(url);
 }
 
+function importTicketsFromExcelFile(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const tickets = parseImportedTickets(String(reader.result || ""));
+      if (!tickets.length) {
+        throw new Error("ไม่พบรายการที่นำเข้าได้");
+      }
+      const result = window.HelpdeskStore.importTickets(tickets);
+      showImportMessage(`นำเข้าไฟล์สำเร็จ ${result.total} รายการ เพิ่มใหม่ ${result.inserted} รายการ อัปเดต ${result.updated} รายการ`);
+      clearFilters();
+      load();
+    } catch (error) {
+      showImportMessage(error.message || "นำเข้าไฟล์ไม่สำเร็จ", "error");
+    } finally {
+      importExcelInput.value = "";
+    }
+  };
+  reader.onerror = () => {
+    showImportMessage("อ่านไฟล์ Excel ไม่สำเร็จ", "error");
+    importExcelInput.value = "";
+  };
+  reader.readAsText(file, "utf-8");
+}
+
 function applyFilters() {
   const search = fields.search.value.trim().toLowerCase();
   const assigneeSearch = fields.assignee.value.trim().toLowerCase();
@@ -279,6 +426,12 @@ function load() {
   applyFilters();
 }
 
+function clearFilters() {
+  Object.values(fields).forEach((field) => {
+    field.value = "";
+  });
+}
+
 fillSelect(fields.department, window.HelpdeskData.departments);
 fillSelect(fields.category, window.HelpdeskData.categories);
 fillSelect(fields.status, window.HelpdeskData.statuses);
@@ -291,6 +444,11 @@ document.getElementById("logoutButton").addEventListener("click", () => {
 });
 
 document.getElementById("exportExcelButton").addEventListener("click", exportTicketsToExcel);
+document.getElementById("importExcelButton").addEventListener("click", () => importExcelInput.click());
+importExcelInput.addEventListener("change", () => {
+  const file = importExcelInput.files && importExcelInput.files[0];
+  if (file) importTicketsFromExcelFile(file);
+});
 
 load();
 setupResizableColumns();
