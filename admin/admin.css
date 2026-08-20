@@ -65,6 +65,10 @@ select.category-select {
   width: 100%;
 }
 select.status-select {
+  width: 144px;
+  min-width: 144px;
+  padding-left: 8px;
+  padding-right: 8px;
   font-weight: 800;
   transition: background .2s, border-color .2s, color .2s;
 }

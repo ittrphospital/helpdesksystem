@@ -16,7 +16,8 @@ const fields = {
   priority: document.getElementById("priorityFilter"),
   assignee: document.getElementById("assigneeFilter")
 };
-const tableWidthKey = "helpdesksystem.admin.columnWidths";
+const tableWidthKey = "helpdesksystem.admin.columnWidths.v2";
+const defaultColumnWidths = [130, 120, 120, 170, 130, 154, 180, 170, 190, 180, 200];
 
 function fillSelect(select, values) {
   select.innerHTML = optionAll + values.map((value) => `<option value="${value}">${value}</option>`).join("");
@@ -82,7 +83,7 @@ function applyColumnWidths(table, widths) {
   const headers = Array.from(table.querySelectorAll("thead th"));
   const activeWidths = widths && widths.length === headers.length
     ? widths
-    : headers.map((header) => Math.ceil(header.getBoundingClientRect().width));
+    : headers.map((header, index) => defaultColumnWidths[index] || Math.ceil(header.getBoundingClientRect().width));
   let totalWidth = 0;
 
   headers.forEach((header, index) => {
