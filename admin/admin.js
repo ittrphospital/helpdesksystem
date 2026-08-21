@@ -66,6 +66,7 @@ function buildOptions(values, currentValue) {
 }
 
 function normalizeCell(value) {
+  if (value instanceof Date) return value;
   const text = String(value ?? "").replace(/\s+/g, " ").trim();
   return text === "-" ? "" : text;
 }
@@ -76,21 +77,31 @@ function showImportMessage(message, type = "success") {
   importResultBox.textContent = message;
 }
 
+function normalizeImportedYear(year) {
+  if (year > 3000) return year - 1086;
+  if (year > 2400) return year - 543;
+  return year;
+}
+
+function buildBangkokIso(year, month, day, hour, minute) {
+  return `${String(normalizeImportedYear(Number(year))).padStart(4, "0")}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}T${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00+07:00`;
+}
+
 function parseThaiDateTime(value) {
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return buildBangkokIso(value.getFullYear(), value.getMonth() + 1, value.getDate(), value.getHours(), value.getMinutes());
+  }
+
   const text = normalizeCell(value);
   if (!text) return "";
   const direct = new Date(text);
-  if (!Number.isNaN(direct.getTime())) return direct.toISOString();
+  if (!Number.isNaN(direct.getTime())) {
+    return buildBangkokIso(direct.getFullYear(), direct.getMonth() + 1, direct.getDate(), direct.getHours(), direct.getMinutes());
+  }
 
   const numericMatch = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})/);
   if (numericMatch) {
-    const day = numericMatch[1].padStart(2, "0");
-    const month = numericMatch[2].padStart(2, "0");
-    const rawYear = Number(numericMatch[3]);
-    const year = String(rawYear > 2400 ? rawYear - 543 : rawYear);
-    const hour = numericMatch[4].padStart(2, "0");
-    const minute = numericMatch[5].padStart(2, "0");
-    return `${year}-${month}-${day}T${hour}:${minute}:00+07:00`;
+    return buildBangkokIso(numericMatch[3], numericMatch[2], numericMatch[1], numericMatch[4], numericMatch[5]);
   }
 
   const months = {
@@ -109,21 +120,17 @@ function parseThaiDateTime(value) {
   };
   const match = text.match(/^(\d{1,2})\s+(\S+)\s+(\d{4})\s+(\d{1,2}):(\d{2})/);
   if (!match || !months[match[2]]) return "";
-  const day = match[1].padStart(2, "0");
-  const month = String(months[match[2]]).padStart(2, "0");
-  const year = String(Number(match[3]) - 543);
-  const hour = match[4].padStart(2, "0");
-  const minute = match[5].padStart(2, "0");
-  return `${year}-${month}-${day}T${hour}:${minute}:00+07:00`;
+  return buildBangkokIso(match[3], months[match[2]], match[1], match[4], match[5]);
 }
 
 function getCell(row, indexMap, header) {
   const index = indexMap.get(header);
   if (index === undefined) return "";
-  return normalizeCell(row[index]);
+  const value = normalizeCell(row[index]);
+  return value instanceof Date ? value : value;
 }
 
-function parseImportedTickets(html) {
+function rowsFromHtmlTable(html) {
   const doc = new DOMParser().parseFromString(html, "text/html");
   const tables = Array.from(doc.querySelectorAll("table"));
   const table = tables.find((candidate) => {
@@ -138,18 +145,25 @@ function parseImportedTickets(html) {
     }
     throw new Error("ไม่พบตารางรายการแจ้งซ่อมในไฟล์ Excel");
   }
-  const rows = Array.from(table.querySelectorAll("tr")).map((row) =>
+  return Array.from(table.querySelectorAll("tr")).map((row) =>
     Array.from(row.children).map((cell) => normalizeCell(cell.textContent))
   ).filter((row) => row.some(Boolean));
+}
+
+function parseImportedRows(rows) {
   if (rows.length < 2) {
     throw new Error("ไม่พบรายการแจ้งซ่อมในไฟล์ Excel");
   }
 
-  const headerRow = rows[0];
+  const defaultHeaders = ["เลขที่", "ผู้แจ้ง", "แผนก", "ประเภท", "ความเร่งด่วน", "สถานะ", "ผู้รับผิดชอบ", "วันที่แจ้ง", "วันที่ปิดงาน/ยกเลิก", "รายละเอียด", "การแก้ปัญหา"];
+  const headerRow = rows[0].map((cell) => normalizeCell(cell));
   const indexMap = new Map(headerRow.map((header, index) => [header, index]));
   const requiredHeaders = ["เลขที่", "ผู้แจ้ง", "แผนก", "ประเภท", "สถานะ"];
   const missingHeaders = requiredHeaders.filter((header) => !indexMap.has(header));
-  if (missingHeaders.length) {
+  const canFallbackToTemplate = missingHeaders.length && rows[1] && /^REQ-\d{6}$/.test(String(rows[1][0] || "").trim()) && rows[0].length >= defaultHeaders.length;
+  if (canFallbackToTemplate) {
+    defaultHeaders.forEach((header, index) => indexMap.set(header, index));
+  } else if (missingHeaders.length) {
     throw new Error(`ไฟล์ Excel ขาดคอลัมน์: ${missingHeaders.join(", ")}`);
   }
 
@@ -163,15 +177,15 @@ function parseImportedTickets(html) {
     return {
       id: Date.now() + index,
       ticketNo,
-      requesterName: getCell(row, indexMap, "ผู้แจ้ง") || "-",
-      department: getCell(row, indexMap, "แผนก") || "-",
-      category: getCell(row, indexMap, "ประเภท") || "-",
-      priority: getCell(row, indexMap, "ความเร่งด่วน") || "-",
+      requesterName: String(getCell(row, indexMap, "ผู้แจ้ง") || "-"),
+      department: String(getCell(row, indexMap, "แผนก") || "-"),
+      category: String(getCell(row, indexMap, "ประเภท") || "-"),
+      priority: String(getCell(row, indexMap, "ความเร่งด่วน") || "-"),
       status,
-      assignee: getCell(row, indexMap, "ผู้รับผิดชอบ"),
-      title: getCell(row, indexMap, "ประเภท") || "-",
-      description: getCell(row, indexMap, "รายละเอียด") || "-",
-      solution: getCell(row, indexMap, "การแก้ปัญหา"),
+      assignee: String(getCell(row, indexMap, "ผู้รับผิดชอบ") || ""),
+      title: String(getCell(row, indexMap, "ประเภท") || "-"),
+      description: String(getCell(row, indexMap, "รายละเอียด") || "-"),
+      solution: String(getCell(row, indexMap, "การแก้ปัญหา") || ""),
       attachmentName: "",
       source: "import",
       createdAt,
@@ -180,6 +194,28 @@ function parseImportedTickets(html) {
       cancelledAt: status === "ยกเลิก" ? closedAt : ""
     };
   }).filter(Boolean);
+}
+
+function parseImportedTickets(html) {
+  return parseImportedRows(rowsFromHtmlTable(html));
+}
+
+function parseImportedWorkbook(buffer) {
+  if (!window.XLSX) {
+    throw new Error("ยังโหลดตัวอ่านไฟล์ .xlsx ไม่สำเร็จ กรุณาตรวจอินเทอร์เน็ตหรือ refresh หน้าเว็บแล้วลองใหม่");
+  }
+  const workbook = window.XLSX.read(buffer, { type: "array", cellDates: true });
+  const sheetName = workbook.SheetNames[0];
+  const sheet = workbook.Sheets[sheetName];
+  if (!sheet) {
+    throw new Error("ไม่พบ sheet ในไฟล์ Excel");
+  }
+  const rows = window.XLSX.utils.sheet_to_json(sheet, {
+    header: 1,
+    raw: true,
+    defval: ""
+  }).filter((row) => row.some((cell) => normalizeCell(cell)));
+  return parseImportedRows(rows);
 }
 
 function renderKpis(items) {
@@ -377,9 +413,14 @@ function exportTicketsToExcel() {
 
 function importTicketsFromExcelFile(file) {
   const reader = new FileReader();
+  const extension = file.name.split(".").pop().toLowerCase();
+  const isWorkbookFile = ["xlsx", "xlsm", "xls"].includes(extension);
+
   reader.onload = () => {
     try {
-      const tickets = parseImportedTickets(String(reader.result || ""));
+      const tickets = isWorkbookFile
+        ? parseImportedWorkbook(reader.result)
+        : parseImportedTickets(String(reader.result || ""));
       if (!tickets.length) {
         throw new Error("ไม่พบรายการที่นำเข้าได้");
       }
@@ -397,7 +438,11 @@ function importTicketsFromExcelFile(file) {
     showImportMessage("อ่านไฟล์ Excel ไม่สำเร็จ", "error");
     importExcelInput.value = "";
   };
-  reader.readAsText(file, "utf-8");
+  if (isWorkbookFile) {
+    reader.readAsArrayBuffer(file);
+  } else {
+    reader.readAsText(file, "utf-8");
+  }
 }
 
 function applyFilters() {

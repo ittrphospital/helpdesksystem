@@ -83,7 +83,7 @@
             <p>Admin สามารถเปลี่ยนสถานะงานที่ผู้ใช้แจ้งจาก browser นี้ได้</p>
           </div>
           <div class="table-actions">
-            <input id="importExcelInput" type="file" accept=".xls,.html,.htm" hidden>
+            <input id="importExcelInput" type="file" accept=".xlsx,.xls,.xlsm,.html,.htm" hidden>
             <button class="button secondary import-button" id="importExcelButton" type="button">Import Excel</button>
             <button class="button export-button" id="exportExcelButton" type="button">Export Excel</button>
           </div>
@@ -143,6 +143,7 @@
   <button class="scroll-top" type="button" aria-label="กลับขึ้นด้านบน" data-scroll-top>↑</button>
   <script src="../shared/sample-data.js"></script>
   <script src="../shared/ui.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
   <script src="admin.js"></script>
 </body>
 </html>
