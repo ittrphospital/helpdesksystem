@@ -303,8 +303,9 @@ async function createTicket(request, response) {
   const requesterName = cleanText(body.requesterName);
   const department = cleanText(body.department);
   const category = cleanText(body.category);
+  const description = cleanText(body.description);
 
-  if (!requesterName || !department || !category) {
+  if (!requesterName || !department || !category || !description) {
     return sendJson(response, 400, { error: "required_fields_missing" });
   }
 
@@ -339,7 +340,7 @@ async function createTicket(request, response) {
       ${statusId},
       '',
       ${cleanText(body.title, "-")},
-      ${cleanText(body.description, "-")},
+      ${description},
       ''
     )
     returning ticket_id, ticket_no, requester_name, title, description, created_at, updated_at

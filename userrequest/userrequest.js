@@ -33,7 +33,7 @@ function createTicketPayload(formData) {
     category: formData.get("category"),
     priority: formData.get("priority") || "-",
     title: formData.get("category") || "-",
-    description: formData.get("description").trim() || "-"
+    description: formData.get("description").trim()
   };
 }
 
@@ -97,7 +97,8 @@ fillOptions(document.getElementById("priority"), window.HelpdeskData.priorities,
 [
   ["requesterName", "กรุณากรอกชื่อผู้แจ้ง"],
   ["department", "กรุณาเลือกแผนก"],
-  ["category", "กรุณาเลือกประเภทปัญหา"]
+  ["category", "กรุณาเลือกประเภทปัญหา"],
+  ["description", "กรุณากรอกรายละเอียด"]
 ].forEach(([id, message]) => {
   const field = document.getElementById(id);
   field.addEventListener("invalid", () => field.setCustomValidity(message));

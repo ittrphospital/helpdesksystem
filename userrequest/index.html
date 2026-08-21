@@ -35,7 +35,7 @@
             <div class="section-head compact">
               <div>
                 <h2>ข้อมูลแจ้งซ่อม</h2>
-                <p>บังคับกรอกเฉพาะชื่อผู้แจ้ง แผนก และประเภทปัญหา</p>
+                <p>บังคับกรอกชื่อผู้แจ้ง แผนก ประเภทปัญหา และรายละเอียด</p>
               </div>
             </div>
             <div class="form-grid">
@@ -56,8 +56,8 @@
                 <select id="priority" name="priority"></select>
               </div>
               <div class="field full">
-                <label for="description">รายละเอียด</label>
-                <textarea id="description" name="description" maxlength="1200" placeholder="อธิบายอาการ จุดที่พบปัญหา และเวลาที่เริ่มเกิดปัญหา"></textarea>
+                <label class="required-label" for="description">รายละเอียด</label>
+                <textarea id="description" name="description" required maxlength="1200" placeholder="อธิบายอาการ จุดที่พบปัญหา และเวลาที่เริ่มเกิดปัญหา"></textarea>
               </div>
             </div>
             <div class="notice" id="resultBox" hidden></div>
