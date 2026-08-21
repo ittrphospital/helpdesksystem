@@ -145,6 +145,16 @@ h1 { margin: 10px 0 14px; font-size: clamp(2rem, 4vw, 3.4rem); line-height: 1.15
   padding: 22px;
   background: rgba(255,255,255,.1);
 }
+.landing-hero-panel {
+  width: 70%;
+  min-width: 300px;
+  justify-self: end;
+}
+.landing-hero-panel .button {
+  min-width: 86px;
+  padding-left: 13px;
+  padding-right: 13px;
+}
 .hero-stat { display: grid; grid-template-columns: 1fr auto; gap: 8px; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,.16); }
 .hero-stat:last-child { border-bottom: 0; }
 .hero-stat b { font-size: 1.8rem; }
@@ -332,6 +342,11 @@ tbody tr:hover { background: #f7fafc; }
   .nav-links.open { transform: translateX(0); }
   .nav-link, .nav-button { text-align: left; width: 100%; }
   .hero-grid, .grid.two, .form-grid { grid-template-columns: 1fr; }
+  .landing-hero-panel {
+    width: 100%;
+    min-width: 0;
+    justify-self: stretch;
+  }
   .grid.kpi { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .filters { grid-template-columns: 1fr 1fr; }
   .footer-grid { grid-template-columns: 1fr; }
