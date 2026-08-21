@@ -18,6 +18,9 @@ const fields = {
 };
 const importExcelInput = document.getElementById("importExcelInput");
 const importResultBox = document.getElementById("importResultBox");
+const nextTicketNoInput = document.getElementById("nextTicketNoInput");
+const saveNextTicketNoButton = document.getElementById("saveNextTicketNoButton");
+const clearTicketsButton = document.getElementById("clearTicketsButton");
 const tableWidthKey = "helpdesksystem.admin.columnWidths.v2";
 const defaultColumnWidths = [130, 120, 120, 170, 130, 154, 180, 170, 190, 180, 200];
 
@@ -75,6 +78,51 @@ function showImportMessage(message, type = "success") {
   importResultBox.hidden = false;
   importResultBox.classList.toggle("error", type === "error");
   importResultBox.textContent = message;
+}
+
+function normalizeTicketNo(value) {
+  return String(value || "").trim().toUpperCase();
+}
+
+function isValidTicketNo(value) {
+  return /^REQ-\d{6}$/.test(value);
+}
+
+function refreshNextTicketNo() {
+  if (nextTicketNoInput) {
+    nextTicketNoInput.value = window.HelpdeskStore.getNextTicketNo();
+  }
+}
+
+function saveNextTicketNo() {
+  const nextTicketNo = normalizeTicketNo(nextTicketNoInput.value);
+  if (!isValidTicketNo(nextTicketNo)) {
+    showImportMessage("กรุณากรอกเลข Ticket ในรูปแบบ REQ-690001", "error");
+    nextTicketNoInput.focus();
+    return;
+  }
+
+  window.HelpdeskStore.setNextTicketNo(nextTicketNo);
+  refreshNextTicketNo();
+  showImportMessage(`ตั้งเลข Ticket ถัดไปเป็น ${nextTicketNo} แล้ว`);
+}
+
+function clearTickets() {
+  const nextTicketNo = normalizeTicketNo(nextTicketNoInput.value || window.HelpdeskStore.getNextTicketNo());
+  if (!isValidTicketNo(nextTicketNo)) {
+    showImportMessage("กรุณากรอกเลข Ticket ถัดไปในรูปแบบ REQ-690001 ก่อนล้างข้อมูล", "error");
+    nextTicketNoInput.focus();
+    return;
+  }
+
+  const confirmed = window.confirm(`ต้องการล้างรายการแจ้งซ่อมทั้งหมดใน browser นี้หรือไม่?\n\nหลังล้างข้อมูล เลข Ticket ถัดไปจะเริ่มที่ ${nextTicketNo}`);
+  if (!confirmed) return;
+
+  window.HelpdeskStore.clearTickets(nextTicketNo);
+  clearFilters();
+  refreshNextTicketNo();
+  load();
+  showImportMessage(`ล้างข้อมูลทั้งหมดแล้ว เลข Ticket ถัดไปคือ ${nextTicketNo}`);
 }
 
 function normalizeImportedYear(year) {
@@ -231,9 +279,12 @@ function renderKpis(items) {
   const dataModeText = document.getElementById("dataModeText");
   if (dataModeText) {
     const hasUserTickets = window.HelpdeskStore.getUserTickets().length > 0;
+    const dataCleared = Boolean(window.HelpdeskStore.getSettings().dataCleared);
     dataModeText.textContent = hasUserTickets
       ? "แสดงเฉพาะใบงานที่ผู้ใช้ส่งจริงจาก browser นี้ เพื่อให้ข้อมูลตรงกับหน้า user"
-      : "ยังไม่มีใบงานที่ผู้ใช้ส่งจริง จึงแสดงข้อมูลตัวอย่าง 2 รายการสำหรับทดลองหน้า dashboard";
+      : dataCleared
+        ? "ล้างข้อมูลแล้ว ยังไม่มีใบงานใหม่ใน browser นี้"
+        : "ยังไม่มีใบงานที่ผู้ใช้ส่งจริง จึงแสดงข้อมูลตัวอย่าง 2 รายการสำหรับทดลองหน้า dashboard";
   }
 }
 
@@ -468,6 +519,7 @@ function applyFilters() {
 
 function load() {
   state.tickets = window.HelpdeskStore.getTickets();
+  refreshNextTicketNo();
   applyFilters();
 }
 
@@ -490,6 +542,11 @@ document.getElementById("logoutButton").addEventListener("click", () => {
 
 document.getElementById("exportExcelButton").addEventListener("click", exportTicketsToExcel);
 document.getElementById("importExcelButton").addEventListener("click", () => importExcelInput.click());
+saveNextTicketNoButton.addEventListener("click", saveNextTicketNo);
+clearTicketsButton.addEventListener("click", clearTickets);
+nextTicketNoInput.addEventListener("input", () => {
+  nextTicketNoInput.value = normalizeTicketNo(nextTicketNoInput.value);
+});
 importExcelInput.addEventListener("change", () => {
   const file = importExcelInput.files && importExcelInput.files[0];
   if (file) importTicketsFromExcelFile(file);

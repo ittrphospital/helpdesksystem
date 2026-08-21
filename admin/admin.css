@@ -105,6 +105,23 @@ input.solution-input {
 .export-button {
   background: linear-gradient(135deg, #6b258a, #4b236d);
 }
+.ticket-maintenance {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  justify-content: flex-end;
+  margin: 0 0 14px;
+}
+.ticket-next-field {
+  width: min(260px, 100%);
+}
+.ticket-next-field input {
+  text-transform: uppercase;
+}
+.button.danger {
+  background: linear-gradient(135deg, #b63b3b, #8e2f2f);
+  color: #fff;
+}
 .admin-import-notice {
   margin: 0 0 14px;
 }
@@ -118,6 +135,12 @@ input.solution-input {
   .table-actions {
     justify-content: stretch;
   }
+  .ticket-maintenance {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .ticket-next-field,
+  .ticket-maintenance .button,
   .import-button,
   .export-button {
     width: 100%;

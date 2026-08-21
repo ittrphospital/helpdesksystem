@@ -88,6 +88,14 @@
             <button class="button export-button" id="exportExcelButton" type="button">Export Excel</button>
           </div>
         </div>
+        <div class="ticket-maintenance card card-pad">
+          <div class="field ticket-next-field">
+            <label for="nextTicketNoInput">เลข Ticket ถัดไป</label>
+            <input id="nextTicketNoInput" placeholder="เช่น REQ-690001" inputmode="text">
+          </div>
+          <button class="button secondary" id="saveNextTicketNoButton" type="button">ตั้งเลขถัดไป</button>
+          <button class="button danger" id="clearTicketsButton" type="button">ล้างข้อมูลทั้งหมด</button>
+        </div>
         <div class="notice admin-import-notice" id="importResultBox" hidden></div>
         <div class="card table-wrap">
           <table id="ticketTable">

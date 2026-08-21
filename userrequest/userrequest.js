@@ -117,10 +117,10 @@ document.getElementById("requestForm").addEventListener("submit", async (event) 
   const payload = createTicketPayload(formData);
   const { ticket, telegram } = await createTicket(payload);
 
-  window.HelpdeskStore.addTicket(ticket);
+  const savedTicket = window.HelpdeskStore.addTicket(ticket) || ticket;
   const result = document.getElementById("resultBox");
   result.hidden = false;
-  result.innerHTML = renderSubmitMessage(ticket, telegram);
+  result.innerHTML = renderSubmitMessage(savedTicket, telegram);
   form.reset();
   setFooterMetrics(window.HelpdeskStore.getTickets().length);
   submitButton.disabled = false;

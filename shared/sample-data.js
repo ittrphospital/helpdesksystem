@@ -71,6 +71,7 @@ window.HelpdeskData = {
 
 window.HelpdeskStore = {
   key: "helpdesksystem.local.tickets",
+  settingsKey: "helpdesksystem.local.settings",
   getSavedTickets() {
     const tickets = JSON.parse(localStorage.getItem(this.key) || "[]");
     const migrated = this.repairUserTicketSequence(this.migrateTicketNumbers(tickets));
@@ -82,6 +83,15 @@ window.HelpdeskStore = {
   saveTickets(tickets) {
     localStorage.setItem(this.key, JSON.stringify(tickets));
   },
+  getSettings() {
+    return JSON.parse(localStorage.getItem(this.settingsKey) || "{}") || {};
+  },
+  saveSettings(settings) {
+    localStorage.setItem(this.settingsKey, JSON.stringify(settings));
+  },
+  getBaseTicketsForNumbers() {
+    return this.getSettings().dataCleared ? [] : window.HelpdeskData.tickets;
+  },
   getBuddhistYearCode(dateValue) {
     const year = new Date(dateValue || Date.now()).getFullYear() + 543;
     return String(year).slice(-2);
@@ -92,13 +102,47 @@ window.HelpdeskStore = {
   makeTicketNoForSequence(dateValue, sequence) {
     return `REQ-${this.getBuddhistYearCode(dateValue)}${String(sequence).padStart(4, "0")}`;
   },
-  getMaxSequenceForYear(yearCode) {
-    return [...window.HelpdeskData.tickets, ...this.getSavedTickets()].reduce((max, ticket) => {
+  getMaxSequenceFromTickets(tickets, yearCode) {
+    return tickets.reduce((max, ticket) => {
       const ticketNo = String(ticket.ticketNo || "");
       if (!ticketNo.startsWith(`REQ-${yearCode}`)) return max;
       const seq = Number(ticketNo.slice(6));
       return Number.isFinite(seq) ? Math.max(max, seq) : max;
     }, 0);
+  },
+  getMaxSequenceForYear(yearCode) {
+    return this.getMaxSequenceFromTickets([...this.getBaseTicketsForNumbers(), ...this.getSavedTickets()], yearCode);
+  },
+  normalizeTicketNo(ticketNo) {
+    return String(ticketNo || "").trim().toUpperCase();
+  },
+  setNextTicketNo(ticketNo) {
+    const nextTicketNo = this.normalizeTicketNo(ticketNo);
+    if (!this.isNewTicketNo(nextTicketNo)) return false;
+    this.saveSettings({ ...this.getSettings(), nextTicketNo });
+    this.syncNextTicketNoWithTickets(this.getSavedTickets());
+    return true;
+  },
+  getNextTicketNo() {
+    const settings = this.getSettings();
+    return this.isNewTicketNo(settings.nextTicketNo) ? settings.nextTicketNo : this.makeTicketNo();
+  },
+  syncNextTicketNoWithTickets(tickets) {
+    const settings = this.getSettings();
+    if (!this.isNewTicketNo(settings.nextTicketNo)) return;
+    const yearCode = settings.nextTicketNo.slice(4, 6);
+    const currentSeq = Number(settings.nextTicketNo.slice(6));
+    const maxSeq = this.getMaxSequenceFromTickets([...this.getBaseTicketsForNumbers(), ...tickets], yearCode);
+    if (Number.isFinite(currentSeq) && maxSeq >= currentSeq) {
+      this.saveSettings({ ...settings, nextTicketNo: `REQ-${yearCode}${String(maxSeq + 1).padStart(4, "0")}` });
+    }
+  },
+  clearTickets(nextTicketNo) {
+    const normalizedTicketNo = this.normalizeTicketNo(nextTicketNo);
+    if (normalizedTicketNo && !this.isNewTicketNo(normalizedTicketNo)) return false;
+    this.saveTickets([]);
+    this.saveSettings({ ...this.getSettings(), dataCleared: true, nextTicketNo: normalizedTicketNo || "" });
+    return true;
   },
   migrateTicketNumbers(tickets) {
     const countersByYear = {};
@@ -167,12 +211,12 @@ window.HelpdeskStore = {
     const saved = this.getSavedTickets();
     const userTickets = this.getUserTickets();
 
-    if (userTickets.length > 0) {
+    if (userTickets.length > 0 || this.getSettings().dataCleared) {
       return userTickets.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     }
 
     const byTicketNo = new Map();
-    window.HelpdeskData.tickets.forEach((ticket) => byTicketNo.set(ticket.ticketNo, ticket));
+    this.getBaseTicketsForNumbers().forEach((ticket) => byTicketNo.set(ticket.ticketNo, ticket));
     saved.forEach((ticket) => byTicketNo.set(ticket.ticketNo, ticket));
     return Array.from(byTicketNo.values()).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   },
@@ -181,30 +225,34 @@ window.HelpdeskStore = {
     const nextTicket = { ...ticket, source: ticket.source || "user" };
     const existingIndex = saved.findIndex((item) => item.ticketNo === nextTicket.ticketNo);
 
-    if (existingIndex < 0) {
-      const yearCode = this.getBuddhistYearCode(nextTicket.createdAt || Date.now());
-      const maxSeq = [...window.HelpdeskData.tickets, ...saved].reduce((max, item) => {
-        const ticketNo = String(item.ticketNo || "");
-        if (!ticketNo.startsWith(`REQ-${yearCode}`)) return max;
-        const seq = Number(ticketNo.slice(6));
-        return Number.isFinite(seq) ? Math.max(max, seq) : max;
-      }, 0);
-      const currentSeq = this.isNewTicketNo(nextTicket.ticketNo) && nextTicket.ticketNo.startsWith(`REQ-${yearCode}`)
-        ? Number(nextTicket.ticketNo.slice(6))
-        : 0;
-
-      if (!Number.isFinite(currentSeq) || currentSeq <= maxSeq) {
-        nextTicket.oldTicketNo = nextTicket.oldTicketNo || nextTicket.ticketNo;
-        nextTicket.ticketNo = this.makeTicketNoForSequence(nextTicket.createdAt || Date.now(), maxSeq + 1);
-      }
+    if (nextTicket.source === "server" && existingIndex >= 0) {
+      saved[existingIndex] = { ...saved[existingIndex], ...nextTicket };
+      this.saveTickets(saved);
+      this.syncNextTicketNoWithTickets(saved);
+      return saved[existingIndex];
     }
 
-    if (existingIndex >= 0) {
-      saved[existingIndex] = nextTicket;
-    } else {
-      saved.push(nextTicket);
+    const yearCode = this.getBuddhistYearCode(nextTicket.createdAt || Date.now());
+    const maxSeq = [...this.getBaseTicketsForNumbers(), ...saved].reduce((max, item) => {
+      const ticketNo = String(item.ticketNo || "");
+      if (!ticketNo.startsWith(`REQ-${yearCode}`)) return max;
+      const seq = Number(ticketNo.slice(6));
+      return Number.isFinite(seq) ? Math.max(max, seq) : max;
+    }, 0);
+    const currentSeq = this.isNewTicketNo(nextTicket.ticketNo) && nextTicket.ticketNo.startsWith(`REQ-${yearCode}`)
+      ? Number(nextTicket.ticketNo.slice(6))
+      : 0;
+    const shouldAdjustTicketNo = nextTicket.source !== "server" && (existingIndex >= 0 || !Number.isFinite(currentSeq) || currentSeq <= maxSeq);
+
+    if (shouldAdjustTicketNo) {
+      nextTicket.oldTicketNo = nextTicket.oldTicketNo || nextTicket.ticketNo;
+      nextTicket.ticketNo = this.makeTicketNoForSequence(nextTicket.createdAt || Date.now(), maxSeq + 1);
     }
+
+    saved.push(nextTicket);
     this.saveTickets(saved);
+    this.syncNextTicketNoWithTickets(saved);
+    return nextTicket;
   },
   importTickets(tickets) {
     const saved = this.getSavedTickets();
@@ -224,6 +272,8 @@ window.HelpdeskStore = {
     });
 
     this.saveTickets(saved);
+    this.saveSettings({ ...this.getSettings(), dataCleared: true });
+    this.syncNextTicketNoWithTickets(saved);
     return { total: tickets.length, inserted, updated };
   },
   updateStatus(ticketNo, status) {
