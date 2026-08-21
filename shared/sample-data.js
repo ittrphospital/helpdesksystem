@@ -92,6 +92,14 @@ window.HelpdeskStore = {
   makeTicketNoForSequence(dateValue, sequence) {
     return `REQ-${this.getBuddhistYearCode(dateValue)}${String(sequence).padStart(4, "0")}`;
   },
+  getMaxSequenceForYear(yearCode) {
+    return [...window.HelpdeskData.tickets, ...this.getSavedTickets()].reduce((max, ticket) => {
+      const ticketNo = String(ticket.ticketNo || "");
+      if (!ticketNo.startsWith(`REQ-${yearCode}`)) return max;
+      const seq = Number(ticketNo.slice(6));
+      return Number.isFinite(seq) ? Math.max(max, seq) : max;
+    }, 0);
+  },
   migrateTicketNumbers(tickets) {
     const countersByYear = {};
     return tickets
@@ -244,11 +252,7 @@ window.HelpdeskStore = {
   makeTicketNo() {
     const now = new Date();
     const yearCode = this.getBuddhistYearCode(now);
-    const ticketsForYear = this.getUserTickets().filter((ticket) => ticket.ticketNo.startsWith(`REQ-${yearCode}`));
-    const maxSeq = ticketsForYear.reduce((max, ticket) => {
-      const seq = Number(ticket.ticketNo.slice(6));
-      return Number.isFinite(seq) ? Math.max(max, seq) : max;
-    }, 0);
+    const maxSeq = this.getMaxSequenceForYear(yearCode);
     return this.makeTicketNoForSequence(now, maxSeq + 1);
   }
 };
