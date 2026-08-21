@@ -94,7 +94,54 @@ function refreshNextTicketNo() {
   }
 }
 
-function saveNextTicketNo() {
+function shouldUseMaintenanceApi() {
+  return ["http:", "https:"].includes(window.location.protocol)
+    && !["localhost", "127.0.0.1"].includes(window.location.hostname);
+}
+
+function getMaintenanceKey() {
+  let key = sessionStorage.getItem("helpdesksystem.maintenanceKey") || "";
+  if (!key) {
+    key = window.prompt("กรอกรหัส ADMIN_MAINTENANCE_KEY สำหรับจัดการข้อมูล Neon") || "";
+    if (key) sessionStorage.setItem("helpdesksystem.maintenanceKey", key);
+  }
+  return key;
+}
+
+async function postMaintenance(action, nextTicketNo) {
+  if (!shouldUseMaintenanceApi()) return null;
+
+  const maintenanceKey = getMaintenanceKey();
+  if (!maintenanceKey) {
+    throw new Error("ยกเลิกการเชื่อมต่อ Neon เพราะไม่ได้กรอกรหัส maintenance");
+  }
+
+  const response = await fetch("/api/admin/maintenance", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-admin-maintenance-key": maintenanceKey
+    },
+    body: JSON.stringify({ action, nextTicketNo })
+  });
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    if (data.error === "maintenance_key_not_configured") {
+      sessionStorage.removeItem("helpdesksystem.maintenanceKey");
+      throw new Error("Vercel ยังไม่ได้ตั้งค่า ADMIN_MAINTENANCE_KEY");
+    }
+    if (data.error === "invalid_maintenance_key") {
+      sessionStorage.removeItem("helpdesksystem.maintenanceKey");
+      throw new Error("รหัส ADMIN_MAINTENANCE_KEY ไม่ถูกต้อง");
+    }
+    throw new Error(data.error || "เชื่อมต่อ Neon maintenance API ไม่สำเร็จ");
+  }
+
+  return data.status || null;
+}
+
+async function saveNextTicketNo() {
   const nextTicketNo = normalizeTicketNo(nextTicketNoInput.value);
   if (!isValidTicketNo(nextTicketNo)) {
     showImportMessage("กรุณากรอกเลข Ticket ในรูปแบบ REQ-690001", "error");
@@ -102,12 +149,19 @@ function saveNextTicketNo() {
     return;
   }
 
-  window.HelpdeskStore.setNextTicketNo(nextTicketNo);
-  refreshNextTicketNo();
-  showImportMessage(`ตั้งเลข Ticket ถัดไปเป็น ${nextTicketNo} แล้ว`);
+  try {
+    const status = await postMaintenance("setNextTicketNo", nextTicketNo);
+    window.HelpdeskStore.setNextTicketNo(status?.effectiveNextTicketNo || nextTicketNo);
+    refreshNextTicketNo();
+    showImportMessage(status
+      ? `ตั้งเลข Ticket ถัดไปใน Neon เป็น ${status.effectiveNextTicketNo} แล้ว`
+      : `ตั้งเลข Ticket ถัดไปเป็น ${nextTicketNo} แล้ว`);
+  } catch (error) {
+    showImportMessage(error.message || "ตั้งเลข Ticket ถัดไปไม่สำเร็จ", "error");
+  }
 }
 
-function clearTickets() {
+async function clearTickets() {
   const nextTicketNo = normalizeTicketNo(nextTicketNoInput.value || window.HelpdeskStore.getNextTicketNo());
   if (!isValidTicketNo(nextTicketNo)) {
     showImportMessage("กรุณากรอกเลข Ticket ถัดไปในรูปแบบ REQ-690001 ก่อนล้างข้อมูล", "error");
@@ -115,14 +169,23 @@ function clearTickets() {
     return;
   }
 
-  const confirmed = window.confirm(`ต้องการล้างรายการแจ้งซ่อมทั้งหมดใน browser นี้หรือไม่?\n\nหลังล้างข้อมูล เลข Ticket ถัดไปจะเริ่มที่ ${nextTicketNo}`);
+  const target = shouldUseMaintenanceApi() ? "browser นี้และฐานข้อมูล Neon" : "browser นี้";
+  const confirmed = window.confirm(`ต้องการล้างรายการแจ้งซ่อมทั้งหมดใน ${target} หรือไม่?\n\nหลังล้างข้อมูล เลข Ticket ถัดไปจะเริ่มที่ ${nextTicketNo}`);
   if (!confirmed) return;
 
-  window.HelpdeskStore.clearTickets(nextTicketNo);
-  clearFilters();
-  refreshNextTicketNo();
-  load();
-  showImportMessage(`ล้างข้อมูลทั้งหมดแล้ว เลข Ticket ถัดไปคือ ${nextTicketNo}`);
+  try {
+    const status = await postMaintenance("clearTickets", nextTicketNo);
+    const effectiveTicketNo = status?.effectiveNextTicketNo || nextTicketNo;
+    window.HelpdeskStore.clearTickets(effectiveTicketNo);
+    clearFilters();
+    refreshNextTicketNo();
+    load();
+    showImportMessage(status
+      ? `ล้างข้อมูลใน Neon แล้ว เลข Ticket ถัดไปคือ ${status.effectiveNextTicketNo}`
+      : `ล้างข้อมูลทั้งหมดแล้ว เลข Ticket ถัดไปคือ ${effectiveTicketNo}`);
+  } catch (error) {
+    showImportMessage(error.message || "ล้างข้อมูลไม่สำเร็จ", "error");
+  }
 }
 
 function normalizeImportedYear(year) {
