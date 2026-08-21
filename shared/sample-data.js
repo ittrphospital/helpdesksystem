@@ -118,7 +118,9 @@ window.HelpdeskStore = {
   },
   getUserTickets() {
     const sampleTicketNos = this.getSampleTicketNos();
-    return this.getSavedTickets().filter((ticket) => ticket.source === "user" || !sampleTicketNos.has(ticket.ticketNo));
+    return this.getSavedTickets().filter(
+      (ticket) => ticket.source === "user" || ticket.source === "import" || !sampleTicketNos.has(ticket.ticketNo)
+    );
   },
   getTickets() {
     const saved = this.getSavedTickets();
