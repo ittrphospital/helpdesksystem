@@ -106,6 +106,60 @@ function requireDatabase() {
   }
   return neon(process.env.DATABASE_URL);
 }
+function mapTicketRow(row) {
+  return {
+    id: row.ticket_id,
+    ticketNo: row.ticket_no,
+    requesterName: row.requester_name,
+    department: row.department_name,
+    category: row.category_name,
+    priority: row.priority_name,
+    status: row.status_name,
+    assignee: row.assignee_name || "",
+    title: row.title || "-",
+    description: row.description || "-",
+    solution: row.solution_text || "",
+    attachmentName: "",
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    completedAt: row.completed_at || "",
+    cancelledAt: row.cancelled_at || "",
+    source: "server"
+  };
+}
+
+function normalizeTicketNo(value) {
+  return String(value || "").trim().toUpperCase();
+}
+
+async function getTicketByNo(sql, ticketNo) {
+  const rows = await sql`
+    select
+      t.ticket_id,
+      t.ticket_no,
+      t.requester_name,
+      d.department_name,
+      c.category_name,
+      p.priority_name,
+      s.status_name,
+      coalesce(t.assignee_name, '') as assignee_name,
+      t.title,
+      t.description,
+      coalesce(t.solution_text, '') as solution_text,
+      t.created_at,
+      t.updated_at,
+      t.completed_at,
+      t.cancelled_at
+    from repair_tickets t
+    join departments d on d.department_id = t.department_id
+    join problem_categories c on c.category_id = t.category_id
+    join priority_levels p on p.priority_id = t.priority_id
+    join repair_statuses s on s.status_id = t.status_id
+    where t.ticket_no = ${ticketNo}
+    limit 1
+  `;
+  return rows[0] ? mapTicketRow(rows[0]) : null;
+}
 
 async function ensureSchema(sql) {
   await sql`create extension if not exists pgcrypto`;
@@ -298,6 +352,89 @@ async function logTelegram(sql, ticketId, message, telegram) {
   }
 }
 
+async function listTickets(response) {
+  const sql = requireDatabase();
+  await ensureSchema(sql);
+
+  const rows = await sql`
+    select
+      t.ticket_id,
+      t.ticket_no,
+      t.requester_name,
+      d.department_name,
+      c.category_name,
+      p.priority_name,
+      s.status_name,
+      coalesce(t.assignee_name, '') as assignee_name,
+      t.title,
+      t.description,
+      coalesce(t.solution_text, '') as solution_text,
+      t.created_at,
+      t.updated_at,
+      t.completed_at,
+      t.cancelled_at
+    from repair_tickets t
+    join departments d on d.department_id = t.department_id
+    join problem_categories c on c.category_id = t.category_id
+    join priority_levels p on p.priority_id = t.priority_id
+    join repair_statuses s on s.status_id = t.status_id
+    order by t.created_at desc, t.ticket_no desc
+  `;
+
+  return sendJson(response, 200, { tickets: rows.map(mapTicketRow) });
+}
+
+async function updateTicket(request, response) {
+  const body = request.body || {};
+  const ticketNo = normalizeTicketNo(body.ticketNo);
+  if (!/^REQ-\d{6}$/.test(ticketNo)) {
+    return sendJson(response, 400, { error: "invalid_ticket_no" });
+  }
+
+  const sql = requireDatabase();
+  await ensureSchema(sql);
+
+  const existingTicket = await getTicketByNo(sql, ticketNo);
+  if (!existingTicket) {
+    return sendJson(response, 404, { error: "ticket_not_found" });
+  }
+
+  if (Object.prototype.hasOwnProperty.call(body, "category")) {
+    const category = cleanText(body.category);
+    if (category) {
+      const categoryId = await getCategoryId(sql, category);
+      await sql`update repair_tickets set category_id = ${categoryId}, updated_at = now() where ticket_no = ${ticketNo}`;
+    }
+  }
+
+  if (Object.prototype.hasOwnProperty.call(body, "status")) {
+    const status = cleanText(body.status);
+    if (status) {
+      const statusId = await getStatusId(sql, status);
+      const completedAt = status === "เสร็จสิ้น" ? new Date().toISOString() : null;
+      const cancelledAt = status === "ยกเลิก" ? new Date().toISOString() : null;
+      await sql`
+        update repair_tickets
+        set status_id = ${statusId},
+            completed_at = ${completedAt},
+            cancelled_at = ${cancelledAt},
+            updated_at = now()
+        where ticket_no = ${ticketNo}
+      `;
+    }
+  }
+
+  if (Object.prototype.hasOwnProperty.call(body, "assignee")) {
+    await sql`update repair_tickets set assignee_name = ${cleanText(body.assignee)}, updated_at = now() where ticket_no = ${ticketNo}`;
+  }
+
+  if (Object.prototype.hasOwnProperty.call(body, "solution")) {
+    await sql`update repair_tickets set solution_text = ${cleanText(body.solution)}, updated_at = now() where ticket_no = ${ticketNo}`;
+  }
+
+  const ticket = await getTicketByNo(sql, ticketNo);
+  return sendJson(response, 200, { ticket });
+}
 async function createTicket(request, response) {
   const body = request.body || {};
   const requesterName = cleanText(body.requesterName);
@@ -376,11 +513,18 @@ async function createTicket(request, response) {
 
 module.exports = async function handler(request, response) {
   try {
-    if (request.method !== "POST") {
-      response.setHeader("allow", "POST");
-      return sendJson(response, 405, { error: "method_not_allowed" });
+    if (request.method === "GET") {
+      return await listTickets(response);
     }
-    return await createTicket(request, response);
+    if (request.method === "POST") {
+      return await createTicket(request, response);
+    }
+    if (request.method === "PATCH") {
+      return await updateTicket(request, response);
+    }
+
+    response.setHeader("allow", "GET, POST, PATCH");
+    return sendJson(response, 405, { error: "method_not_allowed" });
   } catch (error) {
     const statusCode = error.statusCode || 500;
     return sendJson(response, statusCode, { error: error.message || "server_error" });

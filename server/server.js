@@ -195,6 +195,54 @@ function sendTelegramMessage(message) {
   });
 }
 
+async function handleListTickets(response) {
+  const tickets = await readTickets();
+  return sendJson(response, 200, {
+    tickets: tickets.slice().sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+  });
+}
+
+async function handleUpdateTicket(request, response) {
+  let body;
+  try {
+    body = await readJsonBody(request);
+  } catch (error) {
+    return sendJson(response, 400, { error: "invalid_json" });
+  }
+
+  const ticketNo = String(body.ticketNo || "").trim().toUpperCase();
+  if (!/^REQ-\d{6}$/.test(ticketNo)) {
+    return sendJson(response, 400, { error: "invalid_ticket_no" });
+  }
+
+  const tickets = await readTickets();
+  const ticket = tickets.find((item) => item.ticketNo === ticketNo);
+  if (!ticket) {
+    return sendJson(response, 404, { error: "ticket_not_found" });
+  }
+
+  const now = new Date().toISOString();
+  if (Object.prototype.hasOwnProperty.call(body, "category")) ticket.category = cleanText(body.category, ticket.category);
+  if (Object.prototype.hasOwnProperty.call(body, "assignee")) ticket.assignee = cleanText(body.assignee);
+  if (Object.prototype.hasOwnProperty.call(body, "solution")) ticket.solution = cleanText(body.solution);
+  if (Object.prototype.hasOwnProperty.call(body, "status")) {
+    ticket.status = cleanText(body.status, ticket.status);
+    if (ticket.status === "เสร็จสิ้น") {
+      ticket.completedAt = ticket.completedAt || now;
+      ticket.cancelledAt = "";
+    } else if (ticket.status === "ยกเลิก") {
+      ticket.cancelledAt = ticket.cancelledAt || now;
+      ticket.completedAt = "";
+    } else {
+      ticket.completedAt = "";
+      ticket.cancelledAt = "";
+    }
+  }
+  ticket.updatedAt = now;
+
+  await writeTickets(tickets);
+  return sendJson(response, 200, { ticket });
+}
 async function handleCreateTicket(request, response) {
   let body;
   try {
@@ -274,8 +322,12 @@ const server = http.createServer(async (request, response) => {
         hasChatId: Boolean(process.env.TELEGRAM_CHAT_ID)
       });
     }
-    if (request.method === "POST" && url.pathname === "/api/tickets") {
-      return handleCreateTicket(request, response);
+    if (url.pathname === "/api/tickets") {
+      if (request.method === "GET") return handleListTickets(response);
+      if (request.method === "POST") return handleCreateTicket(request, response);
+      if (request.method === "PATCH") return handleUpdateTicket(request, response);
+      response.setHeader("allow", "GET, POST, PATCH");
+      return sendJson(response, 405, { error: "method_not_allowed" });
     }
     return handleStatic(request, response);
   } catch (error) {

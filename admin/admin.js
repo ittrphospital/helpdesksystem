@@ -4,7 +4,8 @@ if (sessionStorage.getItem("helpdesksystem.admin") !== "true") {
 
 const state = {
   tickets: [],
-  filtered: []
+  filtered: [],
+  source: "local"
 };
 
 const optionAll = "<option value=\"\">ทั้งหมด</option>";
@@ -67,6 +68,37 @@ function buildOptions(values, currentValue) {
     return `<option value="${escapeHtml(value)}" ${selected}>${escapeHtml(value)}</option>`;
   }).join("");
 }
+function canUseTicketsApi() {
+  return ["http:", "https:"].includes(window.location.protocol);
+}
+
+async function fetchTicketsFromApi() {
+  const response = await fetch("/api/tickets", {
+    headers: { accept: "application/json" },
+    cache: "no-store"
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.error || "tickets_api_error");
+  }
+  return Array.isArray(data.tickets) ? data.tickets : [];
+}
+
+async function patchTicketToApi(ticketNo, changes) {
+  if (!canUseTicketsApi() || state.source !== "api") return false;
+
+  const response = await fetch("/api/tickets", {
+    method: "PATCH",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ ticketNo, ...changes })
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(data.error || "update_ticket_failed");
+  }
+  return true;
+}
+
 
 function normalizeCell(value) {
   if (value instanceof Date) return value;
@@ -341,13 +373,17 @@ function renderKpis(items) {
   document.querySelector("[data-kpi-cancel]").textContent = cancel;
   const dataModeText = document.getElementById("dataModeText");
   if (dataModeText) {
-    const hasUserTickets = window.HelpdeskStore.getUserTickets().length > 0;
-    const dataCleared = Boolean(window.HelpdeskStore.getSettings().dataCleared);
-    dataModeText.textContent = hasUserTickets
-      ? "แสดงเฉพาะใบงานที่ผู้ใช้ส่งจริงจาก browser นี้ เพื่อให้ข้อมูลตรงกับหน้า user"
-      : dataCleared
-        ? "ล้างข้อมูลแล้ว ยังไม่มีใบงานใหม่ใน browser นี้"
-        : "ยังไม่มีใบงานที่ผู้ใช้ส่งจริง จึงแสดงข้อมูลตัวอย่าง 2 รายการสำหรับทดลองหน้า dashboard";
+    if (state.source === "api") {
+      dataModeText.textContent = "แสดงใบงานจริงจากฐานข้อมูล Neon ที่ผู้ใช้ส่งผ่านหน้าแจ้งซ่อม";
+    } else {
+      const hasUserTickets = window.HelpdeskStore.getUserTickets().length > 0;
+      const dataCleared = Boolean(window.HelpdeskStore.getSettings().dataCleared);
+      dataModeText.textContent = hasUserTickets
+        ? "แสดงเฉพาะใบงานที่ผู้ใช้ส่งจริงจาก browser นี้ เพื่อให้ข้อมูลตรงกับหน้า user"
+        : dataCleared
+          ? "ล้างข้อมูลแล้ว ยังไม่มีใบงานใหม่ใน browser นี้"
+          : "ยังไม่มีใบงานที่ผู้ใช้ส่งจริง จึงแสดงข้อมูลตัวอย่าง 2 รายการสำหรับทดลองหน้า dashboard";
+    }
   }
 }
 
@@ -440,30 +476,54 @@ function renderTable(items) {
   }).join("");
 
   document.querySelectorAll(".status-select").forEach((select) => {
-    select.addEventListener("change", () => {
-      window.HelpdeskStore.updateStatus(select.dataset.ticketNo, select.value);
-      load();
+    select.addEventListener("change", async () => {
+      try {
+        const updated = await patchTicketToApi(select.dataset.ticketNo, { status: select.value });
+        if (!updated) window.HelpdeskStore.updateStatus(select.dataset.ticketNo, select.value);
+        await load();
+      } catch (error) {
+        showImportMessage(error.message || "บันทึกสถานะไป Neon ไม่สำเร็จ", "error");
+        await load();
+      }
     });
   });
 
   document.querySelectorAll(".category-select").forEach((select) => {
-    select.addEventListener("change", () => {
-      window.HelpdeskStore.updateCategory(select.dataset.ticketNo, select.value);
-      load();
+    select.addEventListener("change", async () => {
+      try {
+        const updated = await patchTicketToApi(select.dataset.ticketNo, { category: select.value });
+        if (!updated) window.HelpdeskStore.updateCategory(select.dataset.ticketNo, select.value);
+        await load();
+      } catch (error) {
+        showImportMessage(error.message || "บันทึกประเภทไป Neon ไม่สำเร็จ", "error");
+        await load();
+      }
     });
   });
 
   document.querySelectorAll(".assignee-input").forEach((input) => {
-    input.addEventListener("change", () => {
-      window.HelpdeskStore.updateAssignee(input.dataset.ticketNo, input.value);
-      load();
+    input.addEventListener("change", async () => {
+      try {
+        const updated = await patchTicketToApi(input.dataset.ticketNo, { assignee: input.value });
+        if (!updated) window.HelpdeskStore.updateAssignee(input.dataset.ticketNo, input.value);
+        await load();
+      } catch (error) {
+        showImportMessage(error.message || "บันทึกผู้ดำเนินการไป Neon ไม่สำเร็จ", "error");
+        await load();
+      }
     });
   });
 
   document.querySelectorAll(".solution-input").forEach((input) => {
-    input.addEventListener("change", () => {
-      window.HelpdeskStore.updateSolution(input.dataset.ticketNo, input.value);
-      load();
+    input.addEventListener("change", async () => {
+      try {
+        const updated = await patchTicketToApi(input.dataset.ticketNo, { solution: input.value });
+        if (!updated) window.HelpdeskStore.updateSolution(input.dataset.ticketNo, input.value);
+        await load();
+      } catch (error) {
+        showImportMessage(error.message || "บันทึกการแก้ปัญหาไป Neon ไม่สำเร็จ", "error");
+        await load();
+      }
     });
   });
 }
@@ -580,9 +640,21 @@ function applyFilters() {
   setFooterMetrics(state.filtered.length);
 }
 
-function load() {
-  state.tickets = window.HelpdeskStore.getTickets();
+async function load() {
   refreshNextTicketNo();
+
+  if (canUseTicketsApi()) {
+    try {
+      state.tickets = await fetchTicketsFromApi();
+      state.source = "api";
+      applyFilters();
+      return;
+    } catch {
+      state.source = "local";
+    }
+  }
+
+  state.tickets = window.HelpdeskStore.getTickets();
   applyFilters();
 }
 
