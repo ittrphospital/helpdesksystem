@@ -34,6 +34,9 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.request-submit-button {
+  background: linear-gradient(135deg, #6b258a, #4b236d);
+}
 .request-hero {
   padding: calc(var(--nav-height) + 10px) 0 14px;
 }
