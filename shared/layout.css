@@ -138,6 +138,7 @@ button, input, select, textarea { font: inherit; }
 }
 .eyebrow { color: #bde8e7; font-weight: 800; letter-spacing: .04em; }
 h1 { margin: 10px 0 14px; font-size: clamp(2rem, 4vw, 3.4rem); line-height: 1.15; }
+.landing-title { font-size: clamp(1.75rem, 3.25vw, 2.85rem); line-height: 1.18; }
 .hero p { max-width: 720px; color: #d9e7f2; font-size: 1.05rem; }
 .hero-panel {
   border: 1px solid rgba(255,255,255,.18);
